@@ -1,20 +1,25 @@
 import os
 import urllib.request
+from datetime import datetime, timedelta
 from typing import Union, Optional, Type
 
 import numpy
 from PIL import Image
 from numpy import ndarray
 
+from logger import ColoredLogger, get_module_logger
 from repos.api_repo import APIRepo
+from repos.db_repo import MoonRepo
 from repos.models import Coords
 from repos.types import Coords2Points
 from settings import MATRIX_RESHAPE, METEO_BASE_PHOTO_URL, MEDIA
 
+logger: ColoredLogger = get_module_logger("USE_CASE")
+
 
 class DiscordUseCase:
-    def __init__(self, db_repo='', scrapper_repo: Union[Type[APIRepo]] = APIRepo):
-        self.db = db_repo
+    def __init__(self, db_repo: Union[Type[MoonRepo]] = MoonRepo, scrapper_repo: Union[Type[APIRepo]] = APIRepo):
+        self.db: MoonRepo = db_repo()
         self.scrapper: APIRepo = scrapper_repo()
 
     async def get_coords(self, city: str) -> Optional[Coords]:
@@ -24,14 +29,14 @@ class DiscordUseCase:
 
     @staticmethod
     def searching_index_in_file(
-        long: float, lat: float, array: ndarray
+            long: float, lat: float, array: ndarray
     ) -> Coords2Points:
         """Search city points in meteo grid (.bin file)"""
 
         longitude_arr: ndarray = array[:, :, 1] - long
         latitude_arr: ndarray = array[:, :, 0] - lat
         distance_between_points: ndarray = numpy.sqrt(
-            longitude_arr**2 + latitude_arr**2
+            longitude_arr ** 2 + latitude_arr ** 2
         )
         array_with_distance_results: tuple = numpy.unravel_index(
             numpy.argmin(distance_between_points), distance_between_points.shape
@@ -85,5 +90,15 @@ class DiscordUseCase:
         path_of_new_file: str = self.merging_two_photos(url=url)
         return path_of_new_file
 
-    async def get_moon_img(self, day: str):
-        pass
+    async def get_moon_img(self, date_str: str):
+        day, month, year = date_str.split('.')
+        try:
+            date_obj: datetime = datetime(int(year), int(month), int(day), 0, 0, 0)
+        except ValueError as err:
+            logger.error(err)
+            return {"error": f"Day or month is out of range"}
+        res = await self.db.filter(date__gte=date_obj, date__lt=date_obj + timedelta(days=1))
+        breakpoint()
+        if res:
+            return res[0].image.url
+        return {"error": f"No moon data available for day {date_str}"}
