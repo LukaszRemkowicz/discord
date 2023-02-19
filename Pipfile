@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+discord = "*"
+python-dotenv = "*"
+numpy = "*"
+requests = "*"
+pillow = "*"
+beautifulsoup4 = "*"
+geopy = "*"
+lxml = "*"
+Unidecode = "*"
+pydantic = "*"
+SQLAlchemy = "*"
+asyncpg = "*"
+databases = "*"
+psycopg2 = "*"
+tortoise-orm = "*"
+
+[dev-packages]
+pytest = "*"
+black = "*"
+aerich = "*"
+
+[requires]
+python_version = "3.10"
