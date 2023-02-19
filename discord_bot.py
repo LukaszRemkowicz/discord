@@ -1,6 +1,6 @@
 import datetime
 import random
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 from unidecode import unidecode
@@ -9,9 +9,12 @@ from discord.ext import commands, tasks
 
 from logger import get_module_logger, ColoredLogger
 from repos.api_repo import APIRepo
+from repos.db_repo import MoonRepo
 from repos.types import Coords
 from settings import BOT_NAME, TOKEN, DISCORD_LOGS, CHANNELS
 from use_cases.use_case import DiscordUseCase
+from utils.db_utils import DBConnectionHandler
+from utils.utils import Validator
 
 intents = discord.Intents.default()
 intents.members = True
@@ -25,7 +28,7 @@ logger: ColoredLogger = get_module_logger("DISCORD")
 
 @bot.event
 async def on_ready():
-    """searching the guild with name of the variable GUILD:"""
+    """ Discord startup """
     guild = discord.utils.get(bot.guilds)
     members = "\n - ".join(
         [member.name for member in guild.members if member.name != BOT_NAME]
@@ -37,13 +40,14 @@ async def on_ready():
         f"Guild Members:\n\n - {members}\n"
         "\nDebugs prints:  \n"
     )
-    message_channel_id = 1065217359247310851
+    message_channel_id = CHANNELS.get('DEFAULT')
     message_channel = bot.get_channel(message_channel_id)
     await message_channel.send('I\'m back. Did you miss me?')
 
 
 @bot.event
 async def on_member_join(member):
+    """Event for member joining server"""
     await member.create_dm()
     await member.dm_channel.send(f"Hi {member.name}, welcome to our Discord server!")
 
@@ -53,41 +57,56 @@ async def on_member_join(member):
     pass_context=True,
     help="Returns UM diagram for given city ",
 )
-async def um_on_wish(ctx: Context, city_name: str) -> None:
+async def um_on_wish(ctx: Context, city_name: Optional[str] = None) -> None:
     """Returns UM diagram for given city"""
 
-    city_decoded: str = unidecode(city_name)
-    logger.info(f"parsing meteogram for city {city_decoded}")
-
-    scrapper_use_case: DiscordUseCase = DiscordUseCase(
-        db_repo="",
-        scrapper_repo=APIRepo,
-    )
-    coords: Optional[Coords] = await scrapper_use_case.get_coords(city_name)
-
-    if coords:
-        url_res: str = await scrapper_use_case.icm_database_search(city_name, coords)  # noqa
-        await ctx.send(file=discord.File(url_res))
+    if not city_name:
+        await ctx.send("City not given. Command cannot be empty")
     else:
-        await ctx.send(f"Wrong city")
+        city_decoded: str = unidecode(city_name)
+        logger.info(f"parsing meteogram for city {city_decoded}")
+        use_case: DiscordUseCase = DiscordUseCase(
+            db_repo=MoonRepo,
+            scrapper_repo=APIRepo,
+        )
+        coords: Optional[Coords] = await use_case.get_coords(city_name)
+
+        if coords:
+            url_res: str = await use_case.icm_database_search(city_name, coords)  # noqa
+            await ctx.send(file=discord.File(url_res))
+        else:
+            await ctx.send(f"Wrong city")
 
 
 @bot.command(
     name="moon",
     pass_context=True,
-    help="Returns moon information ",
+    help="Returns moon information. Usage example: !moon '20.01.2023'",
 )
-async def get_moon(ctx: Context, day: str) -> None:
+async def get_moon(ctx: Context, day: Optional[str] = None) -> None:
     """Returns moon information"""
 
-    scrapper_use_case: DiscordUseCase = DiscordUseCase()
-    coords: Optional[Coords] = await scrapper_use_case.get_moon_img(day)
+    use_case: DiscordUseCase = DiscordUseCase(
+        db_repo=MoonRepo,
+        scrapper_repo=APIRepo,
+    )
 
-    if coords:
-        url_res: str = await scrapper_use_case.icm_database_search(city_name, coords)  # noqa
-        await ctx.send(file=discord.File(url_res))
+    if not day:
+        await ctx.send("Date is not valid. Should be format like: '20.01.2023'")
     else:
-        await ctx.send(f"Wrong city")
+        data_validator: Union[dict, str]
+        with Validator(date=day) as res:
+            data_validator = res
+
+        async with DBConnectionHandler():
+            if isinstance(data_validator, dict) and data_validator.get('error'):
+                await ctx.send(res.get('error'))
+            else:
+                url_res: str = await use_case.get_moon_img(date_str=day)
+                if isinstance(url_res, dict) and url_res.get('error'):
+                    await ctx.send(url_res.get('error'))
+                else:
+                    await ctx.send(file=discord.File(url_res))
 
 
 @bot.event
@@ -104,6 +123,7 @@ async def on_error(event, *args):
 
 @bot.event
 async def on_command_error(ctx, error):
+    logger.error(error)
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send("You do not have the correct role for this command.")
 

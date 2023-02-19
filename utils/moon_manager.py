@@ -59,6 +59,9 @@ class MoonManager:
             self.folder_name, f"{str(year)}-{month2str}-{day2str}.png"
         )
 
+        if os.path.exists(file_name):
+            return file_name
+
         image_crop.save(file_name, quality=95)
         return file_name
 

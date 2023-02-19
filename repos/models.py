@@ -31,7 +31,7 @@ class BaseModel(Model):
         abstract = True
 
 
-class MoonModel(BaseModel, Model):
+class MoonModel(BaseModel):
     date = fields.DatetimeField()
     image = extra_models.FileField(upload_to=os.path.join(MEDIA, 'moon'))
     created = fields.DatetimeField(auto_now_add=True)
