@@ -165,3 +165,4 @@ cython_debug/
 .idea/
 /_local_settings.py
 /utils/luk_macierz2.bin
+/Drivers/chromedriver_win322/
