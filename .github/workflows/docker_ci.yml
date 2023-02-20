@@ -20,4 +20,4 @@ jobs:
           pip install docker-compose
       - name: Run docker-compose
         run: |
-          docker-compose -f docker-compose.yml run discord sh -c "pytest"
+          docker-compose -f docker-compose.yaml run discord sh -c "pytest"
