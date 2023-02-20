@@ -1,4 +1,4 @@
-FROM python:3.10-alpine
+FROM python:3.10-alpine as development
 
 EXPOSE 8000
 
@@ -34,6 +34,6 @@ RUN apk del .tmp-build-deps
 WORKDIR /discord
 COPY . /discord
 
+FROM development as prod
 RUN adduser -u 5678 --disabled-password --gecos "" user && chown -R user /discord
 USER user
-
