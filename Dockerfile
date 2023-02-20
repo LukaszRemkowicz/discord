@@ -26,6 +26,7 @@ RUN pip install pipenv
 RUN pip install --upgrade pip
 RUN pip install pipenv
 RUN pipenv install --system --deploy --ignore-pipfile
+RUN pipenv install -d --system --deploy --ignore-pipfile
 RUN pipenv install psycopg2
 
 RUN apk del .tmp-build-deps
