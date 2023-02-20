@@ -1,13 +1,19 @@
 import os
 
 from pydantic import BaseModel as PydanticBaseModel
-from sqlalchemy.ext.declarative import declarative_base
+
+# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import registry
 from tortoise import fields
 from tortoise.models import Model
 from repos.schemas import extra_models
-from settings import MEDIA
+from settings import Settings
 
-Base = declarative_base()
+settings: Settings = Settings()
+
+mapper_registry = registry()
+
+Base = mapper_registry.generate_base()
 
 
 class Coords(PydanticBaseModel):
@@ -33,7 +39,7 @@ class BaseModel(Model):
 
 class MoonModel(BaseModel):
     date = fields.DatetimeField()
-    image = extra_models.FileField(upload_to=os.path.join(MEDIA, 'moon'))
+    image = extra_models.FileField(upload_to=os.path.join(settings.MEDIA, "moon"))
     created = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

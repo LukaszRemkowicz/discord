@@ -3,7 +3,9 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from settings import ROOT_PATH
+from settings import Settings
+
+settings: Settings = Settings()
 
 
 class ColoredFormatter(logging.Formatter):
@@ -61,7 +63,7 @@ class ColoredLogger(logging.Logger):
         console: logging.StreamHandler = logging.StreamHandler()
         console.setFormatter(color_formatter)
 
-        log_dir: str = os.path.join(ROOT_PATH, "logs")
+        log_dir: str = os.path.join(settings.ROOT_PATH, "logs")
         file_handler: logging = logging.FileHandler(
             f"{log_dir}/{datetime.now().date()}.log"
         )
