@@ -11,10 +11,13 @@ from logger import get_module_logger, ColoredLogger
 from repos.api_repo import APIRepo
 from repos.db_repo import MoonRepo
 from repos.types import Coords
-from settings import BOT_NAME, TOKEN, DISCORD_LOGS, CHANNELS
+from settings import Settings
 from use_cases.use_case import DiscordUseCase
 from utils.db_utils import DBConnectionHandler
 from utils.utils import Validator
+
+settings: Settings = Settings()
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -28,10 +31,10 @@ logger: ColoredLogger = get_module_logger("DISCORD")
 
 @bot.event
 async def on_ready():
-    """ Discord startup """
+    """Discord startup"""
     guild = discord.utils.get(bot.guilds)
     members = "\n - ".join(
-        [member.name for member in guild.members if member.name != BOT_NAME]
+        [member.name for member in guild.members if member.name != settings.BOT_NAME]
     )
 
     logger.welcome_msg(
@@ -40,9 +43,6 @@ async def on_ready():
         f"Guild Members:\n\n - {members}\n"
         "\nDebugs prints:  \n"
     )
-    message_channel_id = CHANNELS.get('DEFAULT')
-    message_channel = bot.get_channel(message_channel_id)
-    await message_channel.send('I\'m back. Did you miss me?')
 
 
 @bot.event
@@ -99,22 +99,23 @@ async def get_moon(ctx: Context, day: Optional[str] = None) -> None:
             data_validator = res
 
         async with DBConnectionHandler():
-            if isinstance(data_validator, dict) and data_validator.get('error'):
-                await ctx.send(res.get('error'))
+            if isinstance(data_validator, dict) and data_validator.get("error"):
+                await ctx.send(res.get("error"))
             else:
                 url_res: str = await use_case.get_moon_img(date_str=day)
-                if isinstance(url_res, dict) and url_res.get('error'):
-                    await ctx.send(url_res.get('error'))
+                if isinstance(url_res, dict) and url_res.get("error"):
+                    await ctx.send(url_res.get("error"))
                 else:
                     await ctx.send(file=discord.File(url_res))
 
 
 @bot.event
 async def on_error(event, *args):
-
     date = datetime.datetime.now()
 
-    with open(DISCORD_LOGS.format(date=date.strftime("%d-%m-%Y %H:%M:%S")), "w") as f:
+    with open(
+        settings.DISCORD_LOGS.format(date=date.strftime("%d-%m-%Y %H:%M:%S")), "w"
+    ) as f:
         if event == "on_message":
             f.write(f"Unhandled message: {args[0]}\n")
         else:
@@ -136,7 +137,7 @@ async def called_once_a_some_hours():
         "Its Friday soon   \\.^.^./",
         "whats uuuuuuuuuup?",
     ]
-    message_channel_id = CHANNELS.get('DEFAULT')
+    message_channel_id = settings.CHANNELS.get("DEFAULT")
     message_channel = bot.get_channel(message_channel_id)
     whats_the_hour_now = datetime.datetime.now().time().strftime("%H")
     if 22 > int(whats_the_hour_now) > 7:
@@ -152,8 +153,11 @@ async def called_once_a_some_hours():
 #
 # called_once_a_some_hours.start()
 
+
 async def setup_hook():
     called_once_a_some_hours.start()
+
+
 bot.setup_hook = setup_hook
 
 # @tasks.loop(hours = 1)
@@ -172,4 +176,4 @@ bot.setup_hook = setup_hook
 # # called_once_a_some_hours.start()
 #
 
-bot.run(TOKEN)
+bot.run(settings.TOKEN)

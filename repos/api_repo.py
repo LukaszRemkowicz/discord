@@ -62,10 +62,14 @@ class APIRepo:
         get_scripts: list = get_soup.find_all(language=True)
         scripts: List[str] = str(get_scripts).split(";")
         var_act_x: list = [
-            re.findall("[0-9]+", act_x) for act_x in scripts if "var act_x" in act_x  # noqa
+            re.findall("[0-9]+", act_x)
+            for act_x in scripts
+            if "var act_x" in act_x  # noqa
         ]
         var_act_y: list = [
-            re.findall("[0-9]+", act_y) for act_y in scripts if "var act_y" in act_y  # noqa
+            re.findall("[0-9]+", act_y)
+            for act_y in scripts
+            if "var act_y" in act_y  # noqa
         ]
         coords2points: Coords2Points = Coords2Points(
             act_x=int(var_act_x[0][0]), act_y=int(var_act_y[0][0])

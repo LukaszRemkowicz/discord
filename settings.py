@@ -6,71 +6,101 @@ from dotenv import load_dotenv
 
 from repos.types import CropParams
 
-ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
 
-env_path: str = os.path.join(ROOT_PATH, ".env")
-load_dotenv(env_path)
+class Settings:
+    def __init__(self):
 
+        self._settings = {}
+        self.ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
 
-BIN_PATH: str = ""
-METEO_BASE_PHOTO_URL: str = "http://www.meteo.pl/um/metco/leg_um_pl_cbase_256.png"  # noqa
-MEDIA: str = os.path.join(ROOT_PATH, "media")
-BOT_NAME: str = ""
+        env_path: str = os.path.join(self.ROOT_PATH, ".env")
+        load_dotenv(env_path)
 
-TOKEN: str = os.getenv("DISCORD_TOKEN")
-GUILD: str = os.getenv("DISCORD_GUILD")
-
-CHROME_DRIVER_OPTIONS: List[str] = [
-    "--headless",
-    "--window-size=1500x2000",
-    "--hide-scrollbars",
-]
-METEO_CROP: CropParams = CropParams(top=200, right=400, bottom=2000, left=2200)
-CLEAR_CROP: CropParams = CropParams(top=170, right=250, bottom=1350, left=1450)
-UM_CROP: CropParams = CropParams(top=0, right=0, bottom=820, left=660)
-MOON_CROP: CropParams = CropParams(left=230, top=290, right=1250, bottom=950)
-MOON_END_DATE_RANGE: str = "31/01/2024"
-
-EXEC_CHROME_PATH: str = os.path.join(ROOT_PATH, 'chromedriver_win32', 'chromedriver.exe')
-
-if not os.path.exists(MEDIA):
-    os.mkdir(MEDIA)
-
-LOGS_PATH: str = os.path.join(ROOT_PATH, "logs")
-DISCORD_LOGS: str = "logs/discord/{date}.log"
-
-if not os.path.exists(LOGS_PATH):
-    os.mkdir(LOGS_PATH)
-
-db_config: dict = {
-    'connections': {
-        'default': {
-            'engine': 'tortoise.backends.asyncpg',
-            'credentials': {
-                'host': os.getenv('HOST', 'localhost'),
-                'port': os.getenv('PORT', 5432),
-                'user': os.getenv('USER', 'postgres'),
-                'password': os.getenv('PASSWORD', 'postgres'),
-                'database': os.getenv('DATABASE_NAME', 'postgres'),
+        self._settings["BIN_PATH"]: str = ""
+        self._settings["ROOT_PATH"]: str = self.ROOT_PATH
+        self._settings[
+            "METEO_BASE_PHOTO_URL"
+        ]: str = "http://www.meteo.pl/um/metco/leg_um_pl_cbase_256.png"  # noqa
+        self._settings["MEDIA"]: str = os.path.join(self.ROOT_PATH, "media")
+        self._settings["BOT_NAME"]: str = ""
+        self._settings["TOKEN"]: str = os.getenv("DISCORD_TOKEN")
+        self._settings["GUILD"]: str = os.getenv("DISCORD_GUILD")
+        self._settings["CHROME_DRIVER_OPTIONS"]: List[str] = [
+            "--headless",
+            "--window-size=1500x2000",
+            "--hide-scrollbars",
+        ]
+        self._settings["METEO_CROP"]: CropParams = CropParams(
+            top=200, right=400, bottom=2000, left=2200
+        )
+        self._settings["CLEAR_CROP"]: CropParams = CropParams(
+            top=170, right=250, bottom=1350, left=1450
+        )
+        self._settings["UM_CROP"]: CropParams = CropParams(
+            top=0, right=0, bottom=820, left=660
+        )
+        self._settings["MOON_CROP"]: CropParams = CropParams(
+            left=230, top=290, right=1250, bottom=950
+        )
+        self._settings["MOON_END_DATE_RANGE"]: str = "31/01/2024"
+        self._settings["EXEC_CHROME_PATH"]: str = os.path.join(
+            self.ROOT_PATH, "chromedriver_win32", "chromedriver.exe"
+        )
+        self._settings["LOGS_PATH"]: str = os.path.join(self.ROOT_PATH, "logs")
+        self._settings["DISCORD_LOGS"]: str = "logs/discord/{date}.log"
+        self._settings["DB_CONFIG"]: dict = {
+            "connections": {
+                "default": {
+                    "engine": "tortoise.backends.asyncpg",
+                    "credentials": {
+                        "host": os.getenv("HOST", "localhost"),
+                        "port": os.getenv("PORT", 5432),
+                        "user": os.getenv("USER", "postgres"),
+                        "password": os.getenv("PASSWORD", "postgres"),
+                        "database": os.getenv("DATABASE_NAME", "postgres"),
+                    },
+                },
             },
-        },
-    },
-    'apps': {
-        'models': {
-            'models': ['__main__', 'repos.models', "aerich.models"],
-            'default_connection': 'default',
-        },
-    },
-    'default_connection': 'default',
-}
+            "apps": {
+                "models": {
+                    "models": ["__main__", "repos.models", "aerich.models"],
+                    "default_connection": "default",
+                },
+            },
+            "default_connection": "default",
+        }
+        self._settings["CHANNELS"] = {}
 
-CHANNELS: Dict[str, int] = {}
+        if not os.path.exists(self._settings["MEDIA"]):
+            os.mkdir(self._settings["MEDIA"])
 
+        if not os.path.exists(self._settings["LOGS_PATH"]):
+            os.mkdir(self._settings["LOGS_PATH"])
 
-try:
-    from _local_settings import *
-except Exception as e:
-    print(f"No local settings. {e}")
+        try:
+            import _local_settings
 
-matrix = numpy.fromfile(os.path.join(ROOT_PATH, BIN_PATH))
-MATRIX_RESHAPE = numpy.reshape(matrix, (616, 448, 2))
+            for key in dir(_local_settings):
+                if not key.startswith("__") and not key.endswith("__"):
+                    self._settings[key] = getattr(_local_settings, key)
+        except ImportError:
+            pass
+
+        matrix = numpy.fromfile(
+            os.path.join(self.ROOT_PATH, self._settings["BIN_PATH"])
+        )
+        self._settings["MATRIX_RESHAPE"] = numpy.reshape(matrix, (616, 448, 2))
+
+    def __getattr__(self, key):
+        return self._settings.get(key)
+
+    def set_setting(self, key, value):
+        self._settings[key] = value
+        if key == "ROOT_PATH":
+            self.ROOT_PATH = value
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass

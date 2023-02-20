@@ -10,25 +10,27 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 
 from logger import ColoredLogger, get_module_logger
 from repos.types import CropParams
-from settings import ROOT_PATH, MOON_CROP, MOON_END_DATE_RANGE
+from settings import Settings
 from utils import start_driver, daterange  # type: ignore
 from repos.models import MoonModel
 from db_utils import DBConnectionHandler
+
+settings: Settings = Settings()
 
 logger: ColoredLogger = get_module_logger("MOON")
 
 
 class MoonManager:
     def __init__(self, driver: Union[WebDriver], day: bool = False):
-        self.folder_name: str = f"{ROOT_PATH}/moon/"
+        self.folder_name: str = f"{settings.ROOT_PATH}/moon/"
         self.driver = driver
         # self.base_url: str = "http://www.lowiecki.pl/ao/w/{year}/{month}.htm"
         self.base_url: str = "https://fazyksiezyca24.pl/{year}/{month}/{day}"
         self.xpath: str = "/html/body/div[2]/div[2]/div[1]/div[2]/div[2]/button[1]/p"
-        self.crop: CropParams = MOON_CROP
+        self.crop: CropParams = settings.MOON_CROP
         self.date_range_by_day = daterange(
             datetime.date(datetime.now()),
-            datetime.date(datetime.strptime(MOON_END_DATE_RANGE, "%d/%m/%Y")),
+            datetime.date(datetime.strptime(settings.MOON_END_DATE_RANGE, "%d/%m/%Y")),
         )
         self.day = day
 
@@ -82,12 +84,18 @@ class MoonManager:
     async def loop_by_days(self) -> None:
         async with DBConnectionHandler():
             for day in self.date_range_by_day:
-                url: str = self.base_url.format(year=day.year, month=day.month, day=day.day)
+                url: str = self.base_url.format(
+                    year=day.year, month=day.month, day=day.day
+                )
                 logger.info(f"Parsing url {url}")
                 file_path, file = await self.get_file(url)
-                crop_file_path: str = await self.crop_file(file=file, year=day.year, month=day.month, day=day.day)
-                await MoonModel.create(date=day.strftime("%Y-%m-%d"), image=crop_file_path)
-                logger.info('Saved pic to DB')
+                crop_file_path: str = await self.crop_file(
+                    file=file, year=day.year, month=day.month, day=day.day
+                )
+                await MoonModel.create(
+                    date=day.strftime("%Y-%m-%d"), image=crop_file_path
+                )
+                logger.info("Saved pic to DB")
                 os.remove(file_path)
 
     async def get_file(self, url) -> Tuple[str, Image.Image]:
