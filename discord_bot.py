@@ -124,6 +124,7 @@ async def on_error(event, *args):
 
 @bot.event
 async def on_command_error(ctx, error):
+    breakpoint()
     logger.error(error)
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send("You do not have the correct role for this command.")

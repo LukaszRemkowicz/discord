@@ -31,9 +31,10 @@ class DiscordUseCase:
 
     async def get_coords(self, city: str) -> Optional[Coords]:
         coords: Union[Coords] = await self.scrapper.get_coords(city)
-        logger.info(f'Method get_coords, coords found: {coords.latitude, coords.longitude}')
         if coords:
+            logger.info(f'Method get_coords, coords found: {coords.latitude, coords.longitude}')
             return coords
+        logger.info(f'Method get_coords, coords for city {city}not found')
 
     @staticmethod
     def searching_index_in_file(
@@ -104,6 +105,9 @@ class DiscordUseCase:
         """Search city points. Firstly trying to get it from meteo "API", later from bin file"""
         url: str = await self.scrapper.get_icm_result(data={"name": city})
         logger.info(f'Method icm_database_search, url: {url}')
+
+        if not url and not self.settings.MATRIX_RESHAPE:
+            return
 
         if not url:
             coords2points: Coords2Points = self.searching_index_in_file(
