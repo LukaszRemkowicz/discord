@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import numpy
 from dotenv import load_dotenv
@@ -86,10 +86,12 @@ class Settings:
         except ImportError:
             pass
 
-        matrix = numpy.fromfile(
-            os.path.join(self.ROOT_PATH, self._settings["BIN_PATH"])
-        )
-        self._settings["MATRIX_RESHAPE"] = numpy.reshape(matrix, (616, 448, 2))
+        matrix_path: str = os.path.join(self.ROOT_PATH, self._settings["BIN_PATH"])
+        self._settings["MATRIX_RESHAPE"] = None
+
+        if os.path.isfile(matrix_path):
+            matrix = numpy.fromfile(matrix_path)
+            self._settings["MATRIX_RESHAPE"] = numpy.reshape(matrix, (616, 448, 2))
 
     def __getattr__(self, key):
         return self._settings.get(key)

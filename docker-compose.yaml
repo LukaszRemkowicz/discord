@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  discord:
+    image: discord
+    build:
+      context: .
+      target: development
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/discord
+      - postgres:/vol/postgres
+    command: >
+          sh -c "python discord_bot.py"
+#    restart: always
+    networks:
+      services-network:
+        aliases:
+          - discord
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14.1-alpine
+    environment:
+      - DB_HOST=${HOST}
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${USER}
+      - POSTGRES_PASSWORD=${PASSWORD}
+    ports:
+      - "5434:5432/tcp"
+    restart: always
+    networks:
+      services-network:
+        aliases:
+          - postgres
+    volumes:
+      - postgres:/vol/postgres
+
+  pgadmin_discord:
+    container_name: pgadmin_discord
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+    ports:
+      - "5051:80"
+    depends_on:
+      - db
+    networks:
+      services-network:
+        aliases:
+          - pgadmin
+
+volumes:
+  postgres:
+    driver: local
+
+networks:
+   services-network:
+     name: services-network
+     driver: bridge
