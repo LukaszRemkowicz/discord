@@ -24,10 +24,10 @@ class APIRepo:
         self.session: requests.Session = requests.Session()
         self.headers: dict = headers
 
-    async def __fetch_data(self, url: str, **kwargs) -> Response:
+    async def __fetch_data_post(self, url: str, **kwargs) -> Response:
         self.session.headers.update(self.headers)
         logger.info(f"Started parsing {url}")
-        response: Response = self.session.get(url=url, **kwargs)
+        response: Response = self.session.post(url=url, **kwargs)
         response.raise_for_status()
         logger.info("Success")
         return response
@@ -43,7 +43,7 @@ class APIRepo:
         return Coords(latitude=location.latitude, longitude=location.longitude)
 
     async def get_icm_result(self, **kwargs) -> Optional[str]:
-        response: Response = await self.__fetch_data(
+        response: Response = await self.__fetch_data_post(
             self.urls.UM_URL, headers=self.headers, **kwargs
         )
         parse_response: bs4.BeautifulSoup = bs4.BeautifulSoup(response.text, "lxml")
@@ -80,5 +80,5 @@ class APIRepo:
 
     def prepare_metagram_url(self, coords2points: Coords2Points) -> str:
         return self.urls.MGRAM_URL.format(
-            act_y=coords2points.act_y, act_x=coords2points.act_y, uuid=str(uuid.uuid1())
+            act_y=coords2points.act_y, act_x=coords2points.act_x, uuid=str(uuid.uuid1())
         )

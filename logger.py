@@ -94,4 +94,4 @@ def get_module_logger(mod_name: str) -> ColoredLogger:
     return logging.getLogger(mod_name)  # type: ignore
 
 
-get_module_logger("TESTING_LOGGER").welcome_msg("Welcome")
+# get_module_logger("TESTING_LOGGER").welcome_msg("Welcome")

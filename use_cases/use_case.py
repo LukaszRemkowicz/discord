@@ -31,6 +31,7 @@ class DiscordUseCase:
 
     async def get_coords(self, city: str) -> Optional[Coords]:
         coords: Union[Coords] = await self.scrapper.get_coords(city)
+        logger.info(f'Method get_coords, coords found: {coords.latitude, coords.longitude}')
         if coords:
             return coords
 
@@ -52,9 +53,13 @@ class DiscordUseCase:
         #     10 + round((array_with_distance_results[0] - 10) / 7) * 7,
         #     10 + round((array_with_distance_results[1] - 10) / 7) * 7,
         # )
+        act_x: int = 10 + round((array_with_distance_results[1] - 10) / 7) * 7
+        act_y: int = 10 + round((array_with_distance_results[0] - 10) / 7) * 7
+        logger.info(f'Method: searching_index_in_file, points from file found: {act_x, act_y}')
+
         return Coords2Points(
-            act_x=10 + round((array_with_distance_results[1] - 10) / 7) * 7,
-            act_y=10 + round((array_with_distance_results[0] - 10) / 7) * 7,
+            act_x=act_x,
+            act_y=act_y
         )
 
     def merging_two_photos(self, url) -> str:
@@ -70,6 +75,8 @@ class DiscordUseCase:
 
         save_name: str = os.path.join(self.settings.ROOT_PATH, "my_image.png")
         urllib.request.urlretrieve(url, save_name)
+        logger.info(f'Parsing url: {url}')
+
         image1: Image = Image.open(os.path.join(self.settings.ROOT_PATH, base_photo))
         image2: Image = Image.open(save_name)
 
@@ -95,13 +102,16 @@ class DiscordUseCase:
 
     async def icm_database_search(self, city: str, coords: Coords) -> Optional[str]:
         """Search city points. Firstly trying to get it from meteo "API", later from bin file"""
-        url: str = await self.scrapper.get_icm_result(data={"city": city})
+        url: str = await self.scrapper.get_icm_result(data={"name": city})
+        logger.info(f'Method icm_database_search, url: {url}')
 
         if not url:
             coords2points: Coords2Points = self.searching_index_in_file(
                 coords.latitude, coords.longitude, self.settings.MATRIX_RESHAPE
             )
             url: str = self.scrapper.prepare_metagram_url(coords2points)
+            logger.info(f'Url not found, preparing from file: {url}')
+
         path_of_new_file: str = self.merging_two_photos(url=url)
         return path_of_new_file
 

@@ -1,0 +1,23 @@
+name: CI
+
+on:
+
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: install docker-compose
+        run: |
+          pip install docker-compose
+      - name: Run docker-compose
+        run: |
+          docker-compose -f docker-compose.yml run discord sh -c "pytest"
