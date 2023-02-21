@@ -86,7 +86,10 @@ class Settings:
         except ImportError:
             pass
 
-        matrix_path: str = os.path.join(self.ROOT_PATH, self._settings["BIN_PATH"])
+        matrix_path: str = self.ROOT_PATH
+        if self._settings["BIN_PATH"]:
+            matrix_path: str = os.path.join(self.ROOT_PATH, self._settings["BIN_PATH"])
+
         self._settings["MATRIX_RESHAPE"] = None
 
         if os.path.isfile(matrix_path):

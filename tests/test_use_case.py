@@ -7,9 +7,8 @@ import pytest
 from PIL import Image
 from numpy import array
 from pytest_mock import MockerFixture
-from tortoise import Model
 
-from repos.models import Coords, MoonModel
+from repos.models import Coords
 from repos.types import Coords2Points, UmMeteoGram
 from tests.tests_utils import create_images
 from use_cases.use_case import DiscordUseCase
@@ -137,35 +136,33 @@ async def test_icm_database_search_no_url_but_bin_file(
 ) -> None:
     """Test main method for generating image url. URL not returned"""
 
-    with Settings() as settings:
-        settings.MATRIX_RESHAPE = matrix
+    discord_use_case.settings.set_setting("MATRIX_RESHAPE", matrix)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        images: UmMeteoGram = create_images(tmp_dir)
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            images: UmMeteoGram = create_images(tmp_dir)
+    mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
+    mocker.patch(
+        "use_cases.use_case.DiscordUseCase.merging_two_photos",
+        return_value=images.base_img.url,
+    )
 
-        mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
-        mocker.patch(
-            "use_cases.use_case.DiscordUseCase.merging_two_photos",
-            return_value=images.base_img.url,
-        )
+    index_result: Coords2Points = Coords2Points(act_x=409, act_y=80)
+    mocker.patch(
+        "use_cases.use_case.DiscordUseCase.searching_index_in_file",
+        return_value=index_result,
+    )
 
-        index_result: Coords2Points = Coords2Points(act_x=409, act_y=80)
-        mocker.patch(
-            "use_cases.use_case.DiscordUseCase.searching_index_in_file",
-            return_value=index_result,
-        )
+    expected: str = URLConfig.MGRAM_URL.format(act_y="100", act_x="200", uuid="3")
+    mocker.patch(
+        "repos.api_repo.APIRepo.prepare_metagram_url", return_value=expected
+    )
 
-        expected: str = URLConfig.MGRAM_URL.format(act_y="100", act_x="200", uuid="3")
-        mocker.patch(
-            "repos.api_repo.APIRepo.prepare_metagram_url", return_value=expected
-        )
+    res: Optional[str] = await discord_use_case.icm_database_search(
+        city="City", coords=Coords(latitude=54.25, longitude=35.35)
+    )
 
-        res: Optional[str] = await discord_use_case.icm_database_search(
-            city="City", coords=Coords(latitude=54.25, longitude=35.35)
-        )
-
-        assert res
-        assert res == images.base_img.url
+    assert res
+    assert res == images.base_img.url
 
 
 @pytest.mark.asyncio

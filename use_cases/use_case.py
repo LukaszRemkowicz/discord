@@ -109,7 +109,7 @@ class DiscordUseCase:
         url: str = await self.scrapper.get_icm_result(data={"name": city})
         logger.info(f"Method icm_database_search, url: {url}")
 
-        if not url and not self.settings.MATRIX_RESHAPE.any():
+        if not url and not isinstance(self.settings.MATRIX_RESHAPE, numpy.ndarray):
             return
 
         if not url and not coords:
