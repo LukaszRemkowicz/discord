@@ -27,6 +27,7 @@ black = "*"
 aerich = "*"
 pytest-mock = "*"
 pytest-asyncio = "*"
+requests-mock = "*"
 
 [requires]
 python_version = "3.10"

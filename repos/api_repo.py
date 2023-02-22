@@ -32,6 +32,14 @@ class APIRepo:
         logger.info("Success")
         return response
 
+    async def __fetch_data_get(self, url: str) -> Response:
+        self.session.headers.update(self.headers)
+        logger.info(f"Started parsing {url}")
+        response: Response = self.session.get(url=url)
+        response.raise_for_status()
+        logger.info("Success")
+        return response
+
     @staticmethod
     async def get_coords(city: str) -> Optional[Coords]:
         geolocator: Nominatim = Nominatim(user_agent="lukas")
@@ -56,8 +64,10 @@ class APIRepo:
             for element in hrefs
             if "show_mgram" in str(element)
         ][0]
+
         url: str = self.urls.METEOGRAM_URL.format(id=str(id_result[0]))
-        get_req: Response = requests.get(url)
+        get_req: Response = await self.__fetch_data_get(url)
+
         get_soup: bs4.BeautifulSoup = bs4.BeautifulSoup(get_req.text, "lxml")
         get_scripts: list = get_soup.find_all(language=True)
         scripts: List[str] = str(get_scripts).split(";")
