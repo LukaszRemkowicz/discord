@@ -1,7 +1,7 @@
 import os
 import urllib.request
 from datetime import datetime, timedelta
-from typing import Union, Optional, Type
+from typing import Union, Optional, Type, List
 
 import numpy
 from PIL import Image
@@ -10,7 +10,7 @@ from numpy import ndarray
 from logger import ColoredLogger, get_module_logger
 from repos.api_repo import APIRepo
 from repos.db_repo import MoonRepo
-from repos.models import Coords
+from repos.models import Coords, MoonModel
 from repos.types import Coords2Points
 from settings import Settings
 
@@ -32,9 +32,11 @@ class DiscordUseCase:
     async def get_coords(self, city: str) -> Optional[Coords]:
         coords: Union[Coords] = await self.scrapper.get_coords(city)
         if coords:
-            logger.info(f'Method get_coords, coords found: {coords.latitude, coords.longitude}')
+            logger.info(
+                f"Method get_coords, coords found: {coords.latitude, coords.longitude}"
+            )
             return coords
-        logger.info(f'Method get_coords, coords for city {city}not found')
+        logger.info(f"Method get_coords, coords for city {city}not found")
 
     @staticmethod
     def searching_index_in_file(
@@ -56,12 +58,11 @@ class DiscordUseCase:
         # )
         act_x: int = 10 + round((array_with_distance_results[1] - 10) / 7) * 7
         act_y: int = 10 + round((array_with_distance_results[0] - 10) / 7) * 7
-        logger.info(f'Method: searching_index_in_file, points from file found: {act_x, act_y}')
-
-        return Coords2Points(
-            act_x=act_x,
-            act_y=act_y
+        logger.info(
+            f"Method: searching_index_in_file, points from file found: {act_x, act_y}"
         )
+
+        return Coords2Points(act_x=act_x, act_y=act_y)
 
     def merging_two_photos(self, url) -> str:
         """Merge two meteo photos. Base img and meteogram"""
@@ -76,7 +77,7 @@ class DiscordUseCase:
 
         save_name: str = os.path.join(self.settings.ROOT_PATH, "my_image.png")
         urllib.request.urlretrieve(url, save_name)
-        logger.info(f'Parsing url: {url}')
+        logger.info(f"Parsing url: {url}")
 
         image1: Image = Image.open(os.path.join(self.settings.ROOT_PATH, base_photo))
         image2: Image = Image.open(save_name)
@@ -101,12 +102,17 @@ class DiscordUseCase:
 
         return new_path
 
-    async def icm_database_search(self, city: str, coords: Coords) -> Optional[str]:
+    async def icm_database_search(
+        self, city: str, coords: Optional[Coords]
+    ) -> Optional[str]:
         """Search city points. Firstly trying to get it from meteo "API", later from bin file"""
         url: str = await self.scrapper.get_icm_result(data={"name": city})
-        logger.info(f'Method icm_database_search, url: {url}')
+        logger.info(f"Method icm_database_search, url: {url}")
 
-        if not url and not self.settings.MATRIX_RESHAPE:
+        if not url and not isinstance(self.settings.MATRIX_RESHAPE, numpy.ndarray):
+            return
+
+        if not url and not coords:
             return
 
         if not url:
@@ -114,19 +120,19 @@ class DiscordUseCase:
                 coords.latitude, coords.longitude, self.settings.MATRIX_RESHAPE
             )
             url: str = self.scrapper.prepare_metagram_url(coords2points)
-            logger.info(f'Url not found, preparing from file: {url}')
+            logger.info(f"Url not found, preparing from file: {url}")
 
         path_of_new_file: str = self.merging_two_photos(url=url)
         return path_of_new_file
 
-    async def get_moon_img(self, date_str: str):
+    async def get_moon_img(self, date_str: str) -> Union[str, dict]:
         day, month, year = date_str.split(".")
         try:
             date_obj: datetime = datetime(int(year), int(month), int(day), 0, 0, 0)
         except ValueError as err:
             logger.error(err)
-            return {"error": f"Day or month is out of range"}
-        res = await self.db.filter(
+            return {"error": "Day or month is out of range"}
+        res: List[MoonModel] = await self.db.filter(
             date__gte=date_obj, date__lt=date_obj + timedelta(days=1)
         )
 

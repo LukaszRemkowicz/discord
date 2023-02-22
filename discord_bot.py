@@ -10,7 +10,7 @@ from discord.ext import commands, tasks
 from logger import get_module_logger, ColoredLogger
 from repos.api_repo import APIRepo
 from repos.db_repo import MoonRepo
-from repos.types import Coords
+from repos.models import Coords
 from settings import Settings
 from use_cases.use_case import DiscordUseCase
 from utils.db_utils import DBConnectionHandler
@@ -70,9 +70,9 @@ async def um_on_wish(ctx: Context, city_name: Optional[str] = None) -> None:
             scrapper_repo=APIRepo,
         )
         coords: Optional[Coords] = await use_case.get_coords(city_name)
+        url_res: Optional[str] = await use_case.icm_database_search(city_name, coords)
 
-        if coords:
-            url_res: str = await use_case.icm_database_search(city_name, coords)  # noqa
+        if url_res:
             await ctx.send(file=discord.File(url_res))
         else:
             await ctx.send(f"Wrong city")
@@ -124,7 +124,6 @@ async def on_error(event, *args):
 
 @bot.event
 async def on_command_error(ctx, error):
-    breakpoint()
     logger.error(error)
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send("You do not have the correct role for this command.")
