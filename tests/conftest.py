@@ -24,20 +24,20 @@ def matrix() -> ndarray:
 
 @pytest.fixture
 def city_result_template():
-    with open("tests/fixtures/template/search_res.html", "r", encoding='utf-8') as f:
+    with open("tests/fixtures/template/search_res.html", "r", encoding='iso-8859-2') as f:
         file = f.read()
     return file
 
 
 @pytest.fixture
 def city_result_template_no_res():
-    with open("tests/fixtures/template/search_res_no_res.html", "r", encoding='utf-8') as f:
+    with open("tests/fixtures/template/search_res_no_res.html", "r", encoding='iso-8859-2') as f:
         file = f.read()
     return file
 
 
 @pytest.fixture
 def city_response():
-    with open("tests/fixtures/template/response.html", "r", encoding='utf-8') as f:
+    with open("tests/fixtures/template/response.html", "r", encoding='iso-8859-2') as f:
         file = f.read()
     return file
