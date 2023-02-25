@@ -20,14 +20,17 @@ asyncpg = "*"
 databases = "*"
 psycopg2 = "*"
 tortoise-orm = "*"
+aerich = "*"
 
 [dev-packages]
-pytest = "*"
 black = "*"
-aerich = "*"
+requests-mock = "*"
+lovely-pytest-docker = "*"
+pytest-docker = "*"
+pytest = "*"
 pytest-mock = "*"
 pytest-asyncio = "*"
-requests-mock = "*"
+pytest-docker-compose = "*"
 
 [requires]
 python_version = "3.10"

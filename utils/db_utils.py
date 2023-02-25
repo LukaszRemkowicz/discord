@@ -1,10 +1,13 @@
 import asyncio
 from asyncio import AbstractEventLoop
 from datetime import datetime
+from time import sleep
 
+from asyncpg import CannotConnectNowError
 from tortoise import Tortoise
 
 from settings import Settings
+from utils.exceptions import DBConnectionError
 
 settings: Settings = Settings()
 
@@ -14,8 +17,17 @@ class DBConnectionHandler:
 
     async def __aenter__(self) -> None:
         """Open database connection"""
-        await Tortoise.init(config=settings.DB_CONFIG)
-        await Tortoise.generate_schemas()
+        await Tortoise.init(config=settings.db_config)
+        while True:
+            retry: int = 0
+            try:
+                if retry >= 5:
+                    raise DBConnectionError()
+                await Tortoise.generate_schemas()
+                break
+            except (ConnectionError, CannotConnectNowError):
+                retry += 1
+                pass
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Close database connection"""
