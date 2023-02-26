@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import numpy as np
 import pytest
@@ -19,9 +20,13 @@ from utils.exceptions import TestDBWrongCredentialsError
 env_path: str = os.path.join(Settings().ROOT_PATH, ".env")
 env_values = dict(dotenv_values(env_path))
 
-TEST_DB_PASSWORD = env_values.get("POSTGRES_TEST_PASSWORD")
-TEST_DB_USER = env_values.get("POSTGRES_TEST_USER")
-TEST_DB_NAME = env_values.get("POSTGRES_TEST_DB_NAME")
+TEST_DB_PASSWORD = env_values.get("POSTGRES_TEST_PASSWORD") or os.getenv(
+    "POSTGRES_TEST_PASSWORD"
+)
+TEST_DB_USER = env_values.get("POSTGRES_TEST_USER") or os.getenv("POSTGRES_TEST_USER")
+TEST_DB_NAME = env_values.get("POSTGRES_TEST_DB_NAME") or os.getenv(
+    "POSTGRES_TEST_DB_NAME"
+)
 
 pytest_plugins = ["docker_compose"]
 
@@ -29,6 +34,7 @@ pytest_plugins = ["docker_compose"]
 @pytest.fixture(autouse=True)
 def disable_network_calls(monkeypatch):
     """Disable network calls during tests"""
+
     def stunted_get():
         raise RuntimeError("Network access not allowed during testing!")
 
@@ -89,6 +95,10 @@ def docker_app(docker_services: "Services", docker_ip: str) -> dict:
     user: str = env_values.get("POSTGRES_TEST_USER")
     password: str = env_values.get("POSTGRES_TEST_PASSWORD")
     db_name: str = env_values.get("POSTGRES_TEST_DB_NAME")
+
+    print("---------------------------------------------")
+    print(env_values)
+    print(os.environ)
 
     if not user or not db_name or not password:
         raise TestDBWrongCredentialsError()

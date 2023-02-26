@@ -25,7 +25,7 @@ aerich = "*"
 [dev-packages]
 black = "*"
 requests-mock = "*"
-lovely-pytest-docker = "*"
+#lovely-pytest-docker = "*"
 pytest-docker = "*"
 pytest = "*"
 pytest-mock = "*"

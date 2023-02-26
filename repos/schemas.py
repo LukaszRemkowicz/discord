@@ -12,6 +12,10 @@ class FileField(fields.TextField):
         self.upload_to: str = kwargs.pop("upload_to", ".")
         super().__init__(**kwargs)
 
+    @property
+    def upload_to(self):
+        return self.upload_to
+
     def to_db_value(self, value: Union[str, bytes, None], instance) -> Optional[str]:
         if isinstance(value, Image.Image):
             path: str = os.path.join(self.upload_to, f"{uuid.uuid4()}.png")
@@ -39,6 +43,9 @@ class FileField(fields.TextField):
     #             img = Image.open(BytesIO(f.read()))
     #         return img
     #     return None
+    @upload_to.setter
+    def upload_to(self, value):
+        self._upload_to = value
 
 
 # class DateTimeField:

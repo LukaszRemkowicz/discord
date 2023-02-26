@@ -7,6 +7,7 @@ from tortoise.models import Model
 
 from repos.schemas import extra_models
 from settings import Settings
+from utils.exceptions import NoImageFoundException
 
 settings: Settings = Settings()
 mapper_registry = registry()
@@ -22,9 +23,9 @@ def extra_params_validator(**kwargs) -> dict:
     if "image" in kwargs and isinstance(kwargs["image"], str):
         image_path: str = kwargs["image"]
         if not os.path.exists(image_path):
-            open(image_path, "w").close()
+            raise NoImageFoundException
         with open(image_path, "rb") as f:
-            image_data: str = f.read()
+            image_data = f.read()
         kwargs["image"] = image_data
 
     return kwargs

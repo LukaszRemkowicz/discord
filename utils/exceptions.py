@@ -19,3 +19,7 @@ class TestDBWrongCredentialsError(CustomBaseException):
 
 class DBConnectionError(ConnectionError, CannotConnectNowError):
     default_message = str(CannotConnectNowError)
+
+
+class NoImageFoundException(ConnectionError, CannotConnectNowError):
+    default_message = "Image could not be found. Check if path exists"
