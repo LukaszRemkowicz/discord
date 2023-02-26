@@ -1,6 +1,4 @@
 import pytest
-from pytest_mock import MockerFixture
-
 import requests_mock
 
 from repos.api_repo import APIRepo

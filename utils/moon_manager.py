@@ -33,6 +33,7 @@ class MoonManager:
             datetime.date(datetime.strptime(settings.MOON_END_DATE_RANGE, "%d/%m/%Y")),
         )
         self.day = day
+        self.db: MoonModel = MoonModel()
 
     async def create_new_file_path(self) -> str:
         """Create new file path with given filename"""
@@ -92,7 +93,7 @@ class MoonManager:
                 crop_file_path: str = await self.crop_file(
                     file=file, year=day.year, month=day.month, day=day.day
                 )
-                await MoonModel.create(
+                await self.db.create(
                     date=day.strftime("%Y-%m-%d"), image=crop_file_path
                 )
                 logger.info("Saved pic to DB")

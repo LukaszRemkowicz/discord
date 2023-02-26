@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Optional
+from typing import List
 
 import numpy
 from dotenv import load_dotenv
@@ -103,6 +103,10 @@ class Settings:
         self._settings[key] = value
         if key == "ROOT_PATH":
             self.ROOT_PATH = value
+
+    @property
+    def db_config(self):
+        return self._settings["DB_CONFIG"]
 
     def __enter__(self):
         return self

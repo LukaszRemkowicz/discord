@@ -110,9 +110,11 @@ class DiscordUseCase:
         logger.info(f"Method icm_database_search, url: {url}")
 
         if not url and not isinstance(self.settings.MATRIX_RESHAPE, numpy.ndarray):
+            logger.info(f'Matrix is None. Cannot obtain city {city} data')
             return
 
         if not url and not coords:
+            logger.info(f'Url and coords are None. Cannot obtain city {city} data')
             return
 
         if not url:
