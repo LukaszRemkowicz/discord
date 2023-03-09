@@ -20,13 +20,15 @@ settings: Settings = Settings()
 
 @pytest.mark.asyncio
 async def test_db_repo(mocker: "MockerFixture") -> None:
+    """Test MoonRepo methods. Creating a temporary folder with files needed."""
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         images: UmMeteoGram = create_images(tmp_dir)
 
         mocker.patch(
-            "repos.schemas.FileField.upload_to",
+            "repos.schemas.FileField.upload_to_getter",
             return_value=os.path.join(images.base_img.root_path, "moon"),
-            new_callable=PropertyMock
+            new_callable=PropertyMock,
         )
         os.makedirs(os.path.join(images.base_img.root_path, "moon"))
 

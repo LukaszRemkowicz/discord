@@ -5,6 +5,7 @@ from typing import Optional, List
 import bs4
 import requests
 from geopy import Nominatim, Location
+from geopy.exc import GeocoderUnavailable
 from requests import Response
 
 from logger import ColoredLogger, get_module_logger
@@ -43,7 +44,10 @@ class APIRepo:
     @staticmethod
     async def get_coords(city: str) -> Optional[Coords]:
         geolocator: Nominatim = Nominatim(user_agent="lukas")
-        location: Location = geolocator.geocode(city)
+        try:
+            location: Location = geolocator.geocode(city)
+        except GeocoderUnavailable:
+            location: None = None
 
         if not location:
             return None

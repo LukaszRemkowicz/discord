@@ -11,9 +11,9 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from logger import ColoredLogger, get_module_logger
 from repos.types import CropParams
 from settings import Settings
-from utils import start_driver, daterange  # type: ignore
+from utils.utils import start_driver, daterange  # type: ignore
 from repos.models import MoonModel
-from db_utils import DBConnectionHandler
+from utils.db_utils import DBConnectionHandler
 
 settings: Settings = Settings()
 
@@ -50,6 +50,8 @@ class MoonManager:
     async def crop_file(
         self, file: Image, year: int, month: int, day: Optional[int] = None
     ) -> str:
+        """Crop file and return new path. Example path: {ROOT_PATH}/moon/2023-02-22.png"""
+
         image_crop = file.crop(
             (self.crop.left, self.crop.top, self.crop.right, self.crop.bottom)
         )

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Optional
 
 from selenium import webdriver
@@ -25,7 +25,7 @@ def start_driver():
     return webdriver.Chrome(settings.EXEC_CHROME_PATH, options=chrome_options)
 
 
-def daterange(start_date, end_date):
+def daterange(start_date: datetime.date, end_date: datetime.date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
