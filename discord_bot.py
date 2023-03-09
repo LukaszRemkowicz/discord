@@ -1,11 +1,10 @@
 import datetime
-import random
 from typing import Optional, Union
 
 import discord
 from unidecode import unidecode
 from discord.ext.commands import Context
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 from logger import get_module_logger, ColoredLogger
 from repos.api_repo import APIRepo
@@ -75,7 +74,9 @@ async def um_on_wish(ctx: Context, city_name: Optional[str] = None) -> None:
         if url_res:
             await ctx.send(file=discord.File(url_res))
         else:
-            await ctx.send(f"Wrong city")
+            await ctx.send(
+                f"Wrong city or geolocator not available at this moment. Please try again later"
+            )
 
 
 @bot.command(
@@ -129,36 +130,27 @@ async def on_command_error(ctx, error):
         await ctx.send("You do not have the correct role for this command.")
 
 
-@tasks.loop(hours=random.choice([3, 4, 6, 8]))
-async def called_once_a_some_hours():
-    await bot.wait_until_ready()
-    answers = [
-        "Hey, you missed me?",
-        "Its Friday soon   \\.^.^./",
-        "whats uuuuuuuuuup?",
-    ]
-    message_channel_id = settings.CHANNELS.get("DEFAULT")
-    message_channel = bot.get_channel(message_channel_id)
-    whats_the_hour_now = datetime.datetime.now().time().strftime("%H")
-    if 22 > int(whats_the_hour_now) > 7:
-        response = random.choice(answers)
-        await message_channel.send(response)
-
-
-# @called_once_a_some_hours.before_loop
-# async def before():
+# @tasks.loop(hours=random.choice([3, 4, 6, 8]))
+# async def called_once_a_some_hours():
 #     await bot.wait_until_ready()
-#     print("Finished waiting")
+#     answers = [
+#         "Hey, you missed me?",
+#         "Its Friday soon   \\.^.^./",
+#         "whats uuuuuuuuuup?",
+#     ]
+#     message_channel_id = settings.CHANNELS.get("DEFAULT")
+#     message_channel = bot.get_channel(message_channel_id)
+#     whats_the_hour_now = datetime.datetime.now().time().strftime("%H")
+#     if 22 > int(whats_the_hour_now) > 7:
+#         response = random.choice(answers)
+#         await message_channel.send(response)
 #
 #
-# called_once_a_some_hours.start()
-
-
-async def setup_hook():
-    called_once_a_some_hours.start()
-
-
-bot.setup_hook = setup_hook
+# async def setup_hook():
+#     called_once_a_some_hours.start()
+#
+#
+# bot.setup_hook = setup_hook
 
 # @tasks.loop(hours = 1)
 # async def remindstudy():

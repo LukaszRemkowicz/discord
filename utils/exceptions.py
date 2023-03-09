@@ -21,5 +21,9 @@ class DBConnectionError(ConnectionError, CannotConnectNowError):
     default_message = str(CannotConnectNowError)
 
 
-class NoImageFoundException(ConnectionError, CannotConnectNowError):
+class NoImageFoundException(Exception):
     default_message = "Image could not be found. Check if path exists"
+
+
+class UploadToNotGivenException(Exception):
+    default_message = "Parameter upload_to not given. Be sure you used it in FileField field"
