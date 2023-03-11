@@ -35,6 +35,12 @@ class MoonManager:
         self.day = day
         self.db: MoonModel = MoonModel()
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.driver.quit()
+
     async def create_new_file_path(self) -> str:
         """Create new file path with given filename"""
         name_of_file: str = time.asctime().replace(":", "-")
@@ -117,7 +123,8 @@ class MoonManager:
 
 def run_moon_script():
     async def main():
-        await MoonManager(driver=start_driver(), day=True).prepare_moon_photos()
+        async with MoonManager(driver=start_driver(), day=True) as moon:
+            await moon.prepare_moon_photos()
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())

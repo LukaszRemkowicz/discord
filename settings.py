@@ -53,11 +53,11 @@ class Settings:
                 "default": {
                     "engine": "tortoise.backends.asyncpg",
                     "credentials": {
-                        "host": os.getenv("HOST", "localhost"),
-                        "port": os.getenv("PORT", 5432),
-                        "user": os.getenv("USER", "postgres"),
-                        "password": os.getenv("PASSWORD", "postgres"),
-                        "database": os.getenv("DATABASE_NAME", "postgres"),
+                        "host": os.getenv("DB_HOST", "localhost"),
+                        "port": os.getenv("DB_PORT", 5432),
+                        "user": os.getenv("DB_USERNAME", "postgres"),
+                        "password": os.getenv("DB_PASSWORD", "postgres"),
+                        "database": os.getenv("DB_NAME", "postgres"),
                     },
                 },
             },
