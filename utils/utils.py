@@ -22,7 +22,7 @@ class URLConfig:
 def start_driver():
     firefox_options = FirefoxOptions()
     chrome_options = Options()
-    firefox_options.binary_location = "/usr/bin/firefox"
+    firefox_options.binary_location = "/usr/bin/firefox-esr"
 
     for option in settings.CHROME_DRIVER_OPTIONS:
         chrome_options.add_argument(option)
