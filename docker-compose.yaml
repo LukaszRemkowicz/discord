@@ -1,45 +1,41 @@
 version: '3.8'
 
 services:
+
   discord:
     image: discord
+    container_name: discord_app
     build:
       context: .
       target: development
-    ports:
-      - "8080:8080"
     volumes:
       - .:/discord
-      - postgres:/vol/postgres
+      - postgres_vol:/vol/postgres
     command: >
-          sh -c "python discord_bot.py"
-#    restart: always
-    networks:
-      services-network:
-        aliases:
-          - discord
+      sh -c "python discord_bot.py"
+    restart: always
     depends_on:
       - db
 
   db:
-    image: postgres:14.1-alpine
+    image: postgres:15-alpine
+    container_name: discord_db
     environment:
-      - DB_HOST=${HOST}
-      - POSTGRES_DB=${DATABASE_NAME}
-      - POSTGRES_USER=${USER}
-      - POSTGRES_PASSWORD=${PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
-      - "5434:5432/tcp"
+      - "${DB_PORT}:5432"
+    expose:
+      - ${DB_PORT}
     restart: always
-    networks:
-      services-network:
-        aliases:
-          - postgres
     volumes:
-      - postgres:/vol/postgres
+      - .:/discord
+      - postgres_vol:/var/lib/postgresql/data
 
   pgadmin_discord:
-    container_name: pgadmin_discord
+    container_name: discord_pgadmin
     image: dpage/pgadmin4
     restart: always
     environment:
@@ -49,16 +45,6 @@ services:
       - "5051:80"
     depends_on:
       - db
-    networks:
-      services-network:
-        aliases:
-          - pgadmin
 
 volumes:
-  postgres:
-    driver: local
-
-networks:
-   services-network:
-     name: services-network
-     driver: bridge
+  postgres_vol:
