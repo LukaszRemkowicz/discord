@@ -4,7 +4,7 @@ from typing import List, Dict
 import numpy
 from dotenv import load_dotenv
 
-from repos.types import CropParams
+from repos.repo_types import CropParams
 
 ROOT_PATH: str = os.path.dirname(os.path.abspath(__file__))
 

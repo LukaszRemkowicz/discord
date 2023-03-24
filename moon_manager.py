@@ -9,7 +9,7 @@ from selenium.common import WebDriverException
 from selenium.webdriver.chrome.webdriver import WebDriver
 
 from logger import ColoredLogger, get_module_logger
-from repos.types import CropParams
+from repos.repo_types import CropParams
 from settings import Settings
 from utils.utils import start_driver, daterange  # type: ignore
 from repos.models import MoonModel

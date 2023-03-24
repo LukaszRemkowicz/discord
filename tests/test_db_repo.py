@@ -11,7 +11,7 @@ from tortoise.exceptions import IntegrityError
 from settings import Settings
 from repos.db_repo import MoonRepo
 from repos.models import MoonModel
-from repos.types import UmMeteoGram
+from repos.repo_types import UmMeteoGram
 from tests.tests_utils import create_images
 from utils.db_utils import DBConnectionHandler
 

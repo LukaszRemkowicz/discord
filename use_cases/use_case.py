@@ -1,6 +1,8 @@
 import os
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import timedelta
+from datetime import datetime as dt
+from types import GeneratorType
 from typing import Union, Optional, Type, List
 
 import numpy
@@ -11,10 +13,11 @@ from logger import ColoredLogger, get_module_logger
 from repos.api_repo import APIRepo
 from repos.db_repo import MoonRepo
 from repos.models import Coords, MoonModel
-from repos.types import Coords2Points
+from repos.repo_types import Coords2Points
 from settings import Settings
 
 # settings: Settings = Settings()
+from utils.utils import daterange_by_minutes
 
 logger: ColoredLogger = get_module_logger("USE_CASE")
 
@@ -110,11 +113,11 @@ class DiscordUseCase:
         logger.info(f"Method icm_database_search, url: {url}")
 
         if not url and not isinstance(self.settings.MATRIX_RESHAPE, numpy.ndarray):
-            logger.info(f'Matrix is None. Cannot obtain city {city} data')
+            logger.info(f"Matrix is None. Cannot obtain city {city} data")
             return
 
         if not url and not coords:
-            logger.info(f'Url and coords are None. Cannot obtain city {city} data')
+            logger.info(f"Url and coords are None. Cannot obtain city {city} data")
             return
 
         if not url:
@@ -130,7 +133,7 @@ class DiscordUseCase:
     async def get_moon_img(self, date_str: str) -> Union[str, dict]:
         day, month, year = date_str.split(".")
         try:
-            date_obj: datetime = datetime(int(year), int(month), int(day), 0, 0, 0)
+            date_obj: dt = dt(int(year), int(month), int(day), 0, 0, 0)
         except ValueError as err:
             logger.error(err)
             return {"error": "Day or month is out of range"}
@@ -141,3 +144,33 @@ class DiscordUseCase:
         if res:
             return res[0].image.url
         return {"error": f"No moon data available for day {date_str}"}
+
+    async def get_sat_url(self):
+
+        sunrise, sunset = await self.scrapper.get_sunrise_time()
+        date_now: dt = dt.now()
+        generator: GeneratorType = daterange_by_minutes(sunrise, sunset)
+        if date_now in generator:
+            return await self.scrapper.get_sat_img()
+        return await self.scrapper.get_sat_infra_img()
+
+
+# import asyncio
+# from functools import wraps
+#
+#
+# def as_async(f):
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         return asyncio.run(f(*args, **kwargs))
+#
+#     return wrapper
+#
+#
+# @as_async
+# async def update_match_events():
+#     await DiscordUseCase().get_sat_url()
+#
+#
+# update_match_events()
+#

@@ -2,7 +2,7 @@ import os
 
 from PIL import Image
 
-from repos.types import UmMeteoGram
+from repos.repo_types import UmMeteoGram
 
 
 def create_images(tmp_dir):
