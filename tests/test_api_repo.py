@@ -1,7 +1,13 @@
+import os
+
 import pytest
 import requests_mock
+from pytest_mock import MockerFixture
 
 from repos.api_repo import APIRepo
+from settings import Settings
+
+settings: Settings = Settings()
 
 
 @pytest.mark.asyncio
@@ -34,7 +40,9 @@ async def test_api_repo_fetch_data(city_result_template, city_response) -> None:
 
 
 @pytest.mark.asyncio
-async def test_api_repo_fetch_data_no_result(city_result_template_no_res, city_response) -> None:
+async def test_api_repo_fetch_data_no_result(
+    city_result_template_no_res, city_response
+) -> None:
     api_repo = APIRepo()
     api_repo.urls.UM_URL = "https://example_url_one"
 
@@ -45,3 +53,23 @@ async def test_api_repo_fetch_data_no_result(city_result_template_no_res, city_r
         result = await api_repo.get_icm_result(**content)
 
         assert not result
+
+
+@pytest.mark.asyncio
+async def test_get_sat_img(mocker: "MockerFixture") -> None:
+    """test get_sat_img method"""
+
+    mocker.patch("urllib.request.urlretrieve", return_value=[])
+    res: str = await APIRepo().get_sat_img()
+    expected: str = os.path.join(settings.MEDIA, "sat.gif")
+    assert res == expected
+
+
+@pytest.mark.asyncio
+async def test_get_sat_infra_img(mocker: "MockerFixture") -> None:
+    """test get_sat_infra_img method"""
+
+    mocker.patch("urllib.request.urlretrieve", return_value=[])
+    res: str = await APIRepo().get_sat_infra_img()
+    expected: str = os.path.join(settings.MEDIA, "infra_sat.gif")
+    assert res == expected

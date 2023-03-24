@@ -110,6 +110,16 @@ async def get_moon(ctx: Context, day: Optional[str] = None) -> None:
                     await ctx.send(file=discord.File(url_res))
 
 
+@bot.command(name="sat")
+async def return_sat(ctx):
+    use_case: DiscordUseCase = DiscordUseCase(
+        db_repo=MoonRepo,
+        scrapper_repo=APIRepo,
+    )
+    url: str = await use_case.get_sat_url()
+    await ctx.send(file=discord.File(url))
+
+
 @bot.event
 async def on_error(event, *args):
     date = datetime.datetime.now()
