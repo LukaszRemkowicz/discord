@@ -29,7 +29,7 @@ class URLConfig:
         "Standard%20Time/6689549%20width=845%20height=615"
     )
     SAT = (
-        "httpss://api.sat24.com/animated/PL/visual/3/Central%20European%20"
+        "https://api.sat24.com/animated/PL/visual/3/Central%20European%20"
         "Standard%20Time/8708042%20width=845%20height=615"
     )
 
@@ -59,7 +59,7 @@ def daterange(start_date: datetime.date, end_date: datetime.date):
 def daterange_by_minutes(start_date: datetime.date, end_date: datetime.date):
     minutes = range(0, int((end_date - start_date).total_seconds() / 60))
     for minute in minutes:
-        yield start_date + timedelta(minutes=minute)
+        yield (start_date + timedelta(minutes=minute)).strftime("%Y-%m-%d %H:%M")
 
 
 class Validator:
