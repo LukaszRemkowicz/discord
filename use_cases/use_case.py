@@ -150,7 +150,7 @@ class DiscordUseCase:
         sunrise, sunset = await self.scrapper.get_sunrise_time()
         date_now: dt = dt.now()
         generator: GeneratorType = daterange_by_minutes(sunrise, sunset)
-        if date_now in generator:
+        if date_now.strftime("%Y-%m-%d %H:%M") in generator:
             return await self.scrapper.get_sat_img()
         return await self.scrapper.get_sat_infra_img()
 
@@ -173,4 +173,3 @@ class DiscordUseCase:
 #
 #
 # update_match_events()
-#

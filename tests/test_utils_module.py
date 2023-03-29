@@ -28,7 +28,7 @@ def test_date_range_by_days_func() -> None:
     res: GeneratorType = daterange_by_minutes(
         start_date=new_sunrise, end_date=new_sunset
     )
-    res_list: list = [el.strftime("%Y-%m-%d %H:%M") for el in res]
+    res_list: list = [el for el in res]
 
     now: datetime = datetime.datetime.now()
     new_now: datetime = now.replace(hour=23, minute=20).strftime("%Y-%m-%d %H:%M")

@@ -2,7 +2,7 @@ import datetime
 import os
 import tempfile
 from typing import Optional, Union, List, Tuple
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import numpy
 import pytest
@@ -13,6 +13,7 @@ from pytest_mock import MockerFixture
 from repos.models import Coords
 from repos.repo_types import Coords2Points, UmMeteoGram
 from tests.tests_utils import create_images
+import use_cases
 from use_cases.use_case import DiscordUseCase
 
 from settings import Settings
@@ -235,19 +236,22 @@ async def test_get_sat_url(discord_use_case: DiscordUseCase, mocker: "MockerFixt
     expected_sunrise_sunset: Tuple[datetime, datetime] = new_sunrise, new_sunset
 
     now: datetime = datetime.datetime.now()
-    new_now: datetime = now.replace(hour=23, minute=20).strftime("%Y-%m-%d %H:%M")
+    new_now: datetime = now.replace(hour=23, minute=20)
+    datetime_mock = Mock(wraps=datetime.datetime)
+    datetime_mock.now.return_value = new_now
 
-    with patch("datetime.datetime") as mock_datetime:
-        mock_datetime.now.return_value = new_now
+    mocked_datetime = mocker.patch(
+        "use_cases.use_case.dt",
+    )
+    mocked_datetime.datetime.now.return_value = new_now
+    mocker.patch(
+        "repos.api_repo.APIRepo.get_sunrise_time",
+        return_value=expected_sunrise_sunset,
+    )
+    settings: Settings = Settings()
+    expected_result = os.path.join(settings.MEDIA, "infra_sat.gif")
+    res: Union[str, dict] = await discord_use_case.get_sat_url()
 
-        mocker.patch(
-            "repos.api_repo.APIRepo.get_sunrise_time",
-            return_value=expected_sunrise_sunset,
-        )
-        settings: Settings = Settings()
-        expected_result = os.path.join(settings.MEDIA, "infra_sat.gif")
-
-        res: Union[str, dict] = await discord_use_case.get_sat_url()
-        assert res
-        assert isinstance(res, str)
-        assert expected_result == res
+    assert res
+    assert isinstance(res, str)
+    assert expected_result == res
