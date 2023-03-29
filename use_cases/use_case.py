@@ -148,28 +148,28 @@ class DiscordUseCase:
     async def get_sat_url(self):
 
         sunrise, sunset = await self.scrapper.get_sunrise_time()
-        date_now: str = dt.now().strftime("%Y-%m-%d %H:%M")
+        date_now: dt = dt.now()
         generator: GeneratorType = daterange_by_minutes(sunrise, sunset)
-        if date_now in generator:
+        if date_now.strftime("%Y-%m-%d %H:%M") in generator:
             return await self.scrapper.get_sat_img()
         return await self.scrapper.get_sat_infra_img()
 
 
-import asyncio
-from functools import wraps
-
-
-def as_async(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        return asyncio.run(f(*args, **kwargs))
-
-    return wrapper
-
-
-@as_async
-async def update_match_events():
-    await DiscordUseCase().get_sat_url()
-
-
-update_match_events()
+# import asyncio
+# from functools import wraps
+#
+#
+# def as_async(f):
+#     @wraps(f)
+#     def wrapper(*args, **kwargs):
+#         return asyncio.run(f(*args, **kwargs))
+#
+#     return wrapper
+#
+#
+# @as_async
+# async def update_match_events():
+#     await DiscordUseCase().get_sat_url()
+#
+#
+# update_match_events()
