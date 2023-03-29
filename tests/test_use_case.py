@@ -244,9 +244,6 @@ async def test_get_sat_url(discord_use_case: DiscordUseCase, mocker: "MockerFixt
         "use_cases.use_case.dt",
     )
     mocked_datetime.datetime.now.return_value = new_now
-
-    # with patch('datetime.datetime', new=datetime_mock) as mock_datetime:
-        # mock_datetime.now.return_value = new_now
     mocker.patch(
         "repos.api_repo.APIRepo.get_sunrise_time",
         return_value=expected_sunrise_sunset,
