@@ -17,6 +17,21 @@ class URLConfig:
         "http://www.meteo.pl/um/php/meteorogram_id_um.php?ntype=0u&id={id}"  # noqa
     )
     MGRAM_URL = "http://www.meteo.pl/um/metco/mgram_pict.php?ntype=0u&row={act_y}&col={act_x}&lang=pl&uid={uuid}"  # noqa
+    API_SUNRISE_URL = (
+        "https://api.sunrise-sunset.org/json?lat={lat}&lng={long}&formatted=0"
+    )
+    # SAT_INFRA = "https://api.sat24.com/animated/PL/infraPolair/3/Central%20European%20Standard'%20width=845%20" \
+    #             "height=615"
+    # SAT = "http://api.sat24.com/animated/PL/visual/3/Central%20European%20Standard'%20width=845%20height=615"
+
+    SAT_INFRA = (
+        "https://api.sat24.com/animated/PL/infraPolair/3/Central%20European%20"
+        "Standard%20Time/6689549%20width=845%20height=615"
+    )
+    SAT = (
+        "https://api.sat24.com/animated/PL/visual/3/Central%20European%20"
+        "Standard%20Time/8708042%20width=845%20height=615"
+    )
 
 
 def start_driver():
@@ -39,6 +54,12 @@ def start_driver():
 def daterange(start_date: datetime.date, end_date: datetime.date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
+
+
+def daterange_by_minutes(start_date: datetime.date, end_date: datetime.date):
+    minutes = range(0, int((end_date - start_date).total_seconds() / 60))
+    for minute in minutes:
+        yield (start_date + timedelta(minutes=minute)).strftime("%Y-%m-%d %H:%M")
 
 
 class Validator:

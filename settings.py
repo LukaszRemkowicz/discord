@@ -4,7 +4,7 @@ from typing import List
 import numpy
 from dotenv import load_dotenv
 
-from repos.types import CropParams
+from repos.repo_types import CropParams
 
 
 class Settings:
