@@ -1,7 +1,7 @@
 import datetime
 from types import GeneratorType
 
-from utils.utils import daterange, Validator, daterange_by_minutes
+from utils.utils import Validator, daterange, daterange_by_minutes
 
 
 def test_date_range_func() -> None:
@@ -18,7 +18,6 @@ def test_date_range_func() -> None:
 
 
 def test_date_range_by_days_func() -> None:
-
     sunset: datetime = datetime.datetime.now()
     new_sunset: datetime = sunset.replace(hour=23, minute=10)
 
@@ -43,7 +42,6 @@ def test_date_range_by_days_func() -> None:
 
 
 def test_validator_context_manager() -> None:
-
     date: str = "20.01.2023"
     with Validator(date, "Warszawa") as validator:
         assert validator == date

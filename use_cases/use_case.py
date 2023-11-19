@@ -1,22 +1,21 @@
 import os
-import urllib.request
-from datetime import timedelta
 from datetime import datetime as dt
+from datetime import timedelta
+from pathlib import Path
 from types import GeneratorType
-from typing import Union, Optional, Type, List
+from typing import List, Optional, Type, Union
 
 import numpy
-from PIL import Image
 from numpy import ndarray
+from PIL import Image
 
 from logger import ColoredLogger, get_module_logger
-from repos.api_repo import APIRepo
+from repos.api_repo import APIRepo, UrlLibRequest
 from repos.db_repo import MoonRepo
 from repos.models import Coords, MoonModel
 from repos.repo_types import Coords2Points
-from settings import Settings
-
-# settings: Settings = Settings()
+from settings import settings
+from use_cases.managers import UMPhotoManager
 from utils.utils import daterange_by_minutes
 
 logger: ColoredLogger = get_module_logger("USE_CASE")
@@ -30,7 +29,7 @@ class DiscordUseCase:
     ):
         self.db: MoonRepo = db_repo()
         self.scrapper: APIRepo = scrapper_repo()
-        self.settings = Settings()
+        self.settings = settings
 
     async def get_coords(self, city: str) -> Optional[Coords]:
         coords: Union[Coords] = await self.scrapper.get_coords(city)
@@ -70,38 +69,23 @@ class DiscordUseCase:
     def merging_two_photos(self, url) -> str:
         """Merge two meteo photos. Base img and meteogram"""
 
-        utils_base_photo: str = os.path.join("utils", "base.png")
-        base_photo: str = os.path.join(self.settings.ROOT_PATH, utils_base_photo)
+        base_photo: str = os.path.join(self.settings.ROOT_PATH, settings.um.BASE_PHOTO)
 
         if not os.path.exists(base_photo):
-            urllib.request.urlretrieve(
-                self.settings.METEO_BASE_PHOTO_URL, utils_base_photo
+            UrlLibRequest().get_base_image(
+                self.settings.METEO_BASE_PHOTO_URL, settings.um.BASE_PHOTO
             )
 
-        save_name: str = os.path.join(self.settings.ROOT_PATH, "my_image.png")
-        urllib.request.urlretrieve(url, save_name)
-        logger.info(f"Parsing url: {url}")
+        temporary_file_path: Path = (
+            Path(self.settings.ROOT_PATH) / settings.temp_file_name
+        )
+        UrlLibRequest().get_base_image(url, temporary_file_path)
 
         image1: Image = Image.open(os.path.join(self.settings.ROOT_PATH, base_photo))
-        image2: Image = Image.open(save_name)
+        image2: Image = Image.open(temporary_file_path)
 
-        image1_width: int
-        image1_height: int
-        image2_width: int
-        image2_height: int
-
-        image1_width, image1_height = image1.size
-        image2_width, image2_height = image2.size
-
-        new_image: Image = Image.new(
-            "RGB", (image1_width + image2_width, image1_height)
-        )
-        new_image.paste(image1, (0, 0))
-        new_image.paste(image2, (image1_width, 0))
-        new_path: str = os.path.join(self.settings.MEDIA, "merged_image.jpg")
-        new_image.save(new_path, "png")
-
-        os.remove(save_name)
+        new_path: str = UMPhotoManager.merge_photos(image1, image2)
+        os.remove(temporary_file_path)
 
         return new_path
 
@@ -137,6 +121,7 @@ class DiscordUseCase:
         except ValueError as err:
             logger.error(err)
             return {"error": "Day or month is out of range"}
+
         res: List[MoonModel] = await self.db.filter(
             date__gte=date_obj, date__lt=date_obj + timedelta(days=1)
         )
@@ -146,30 +131,9 @@ class DiscordUseCase:
         return {"error": f"No moon data available for day {date_str}"}
 
     async def get_sat_url(self):
-
         sunrise, sunset = await self.scrapper.get_sunrise_time()
         date_now: dt = dt.now()
         generator: GeneratorType = daterange_by_minutes(sunrise, sunset)
         if date_now.strftime("%Y-%m-%d %H:%M") in generator:
-            return await self.scrapper.get_sat_img()
-        return await self.scrapper.get_sat_infra_img()
-
-
-# import asyncio
-# from functools import wraps
-#
-#
-# def as_async(f):
-#     @wraps(f)
-#     def wrapper(*args, **kwargs):
-#         return asyncio.run(f(*args, **kwargs))
-#
-#     return wrapper
-#
-#
-# @as_async
-# async def update_match_events():
-#     await DiscordUseCase().get_sat_url()
-#
-#
-# update_match_events()
+            return await UrlLibRequest().get_sat_img()
+        return await UrlLibRequest().get_sat_infra_img()

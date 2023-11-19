@@ -6,10 +6,9 @@ from tortoise import fields
 from tortoise.models import Model
 
 from repos.schemas import extra_models
-from settings import Settings
+from settings import settings
 from utils.exceptions import NoImageFoundException
 
-settings: Settings = Settings()
 mapper_registry = registry()
 Base = mapper_registry.generate_base()
 
@@ -53,6 +52,3 @@ class MoonModel(BaseModel):
     class Meta:
         table = "moon"
         abstract = False
-
-
-# await MoonModel.create(date=datetime.now(), image='base.png', name='NOWEEEEE Moon')

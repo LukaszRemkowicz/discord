@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+
+#  discord:
+#    image: discord
+#    container_name: discord_app
+#    build:
+#      context: .
+#      target: prod
+#      dockerfile: Dockerfile-prod
+#    volumes:
+#      - postgres_vol:/vol/postgres
+#    environment:
+#      - DISCORD_TOKEN=${DISCORD_TOKEN}
+#      - DISCORD_GUILD=${DISCORD_GUILD}
+#      - DB_HOST=${DB_HOST}
+#      - DB_PORT=${DB_PORT}
+#      - DB_NAME=${DB_NAME}
+#      - DB_USERNAME=${DB_USERNAME}
+#      - DB_PASSWORD=${DB_PASSWORD}
+#    command: >
+#      sh -c "poetry install --no-root --without dev && poetry run python discord_bot.py"
+##    restart: always
+#    depends_on:
+#      - db
+
+  discord_chmury:
+    image: discord_chmury
+    container_name: discord_chmury
+    build:
+      context: .
+      target: prod
+      dockerfile: Dockerfile-prod
+    volumes:
+      - postgres_vol:/vol/postgres
+#    environment:
+#      - DISCORD_TOKEN=${DISCORD_TOKEN}
+#      - DISCORD_GUILD=${DISCORD_GUILD}
+#      - DB_HOST=${DB_HOST}
+#      - DB_PORT=${DB_PORT}
+#      - DB_NAME=${DB_NAME}
+#      - DB_USERNAME=${DB_USERNAME}
+#      - DB_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .sec.env
+    command: >
+      sh -c "poetry install --no-root --without dev && poetry run python discord_bot.py"
+#      sh -c "python discord_bot.py"
+#    restart: always
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: discord_db
+    environment:
+      - DB_HOST=${DB__HOST}
+      - POSTGRES_DB=${DB__NAME}
+      - POSTGRES_USER=${DB__USERNAME}
+      - POSTGRES_PASSWORD=${DB__PASSWORD}
+    ports:
+      - "${DB__PORT}:5432"
+    expose:
+      - ${DB__PORT}
+    restart: always
+    volumes:
+      - .:/discord
+      - postgres_vol:/var/lib/postgresql/data
+    env_file:
+      - .sec.env
+
+#  pgadmin_discord:
+#    container_name: discord_pgadmin
+#    image: dpage/pgadmin4
+#    restart: always
+#    environment:
+#      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+#      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+#    ports:
+#      - "5051:80"
+#    depends_on:
+#      - db
+#    env_file:
+#      - .sec.env
+
+volumes:
+  postgres_vol:

@@ -1,11 +1,10 @@
 import logging
 import os
+import sys
 from datetime import datetime
 from typing import Optional
 
-from settings import Settings
-
-settings: Settings = Settings()
+from settings import settings
 
 
 class ColoredFormatter(logging.Formatter):
@@ -65,8 +64,9 @@ class ColoredLogger(logging.Logger):
 
         log_dir: str = os.path.join(settings.ROOT_PATH, "logs")
         file_handler: logging = logging.FileHandler(
-            f"{log_dir}/{datetime.now().date()}.log"
+            f"{log_dir}/{datetime.now().date()}.log", encoding="utf-8"
         )
+        file_handler.setLevel(logging.DEBUG)
 
         formatter: logging.Formatter = logging.Formatter(
             "%(asctime)s [%(name)-12s] %(levelname)-8s %(message)s"
@@ -75,7 +75,7 @@ class ColoredLogger(logging.Logger):
 
         self.addHandler(console)
         self.addHandler(file_handler)
-        self.addHandler(logging.FileHandler(f"{log_dir}/{datetime.now().date()}.log"))
+        # self.addHandler(logging.FileHandler(f"{log_dir}/{datetime.now().date()}.log"))
         self.setLevel(logging.INFO)
         return
 
@@ -95,3 +95,75 @@ def get_module_logger(mod_name: str) -> ColoredLogger:
 
 
 # get_module_logger("TESTING_LOGGER").welcome_msg("Welcome")
+
+
+class ExceptionTypeFormatter(logging.Formatter):
+    def format(self, record):
+        if record.exc_info:
+            exc_type = record.exc_info[0].__name__  # Extract the exception type
+            record.msg = f"{exc_type}"  # Set only the exception type as the message
+        return super().format(record)
+
+
+def configure_unhandled_exceptions_logger() -> logging.Logger:
+    """Add a file/console handler for unhandled exceptions to the logger"""
+
+    unhandled_exceptions_logger = logging.getLogger("ExceptionLogger")
+    unhandled_exceptions_logger.setLevel(logging.ERROR)
+    log_dir: str = os.path.join(settings.ROOT_PATH, "logs")
+
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    if not os.path.exists(f"{log_dir}/unhandled_exception"):
+        os.mkdir(f"{log_dir}/unhandled_exception")
+
+    # Create a file handler for unhandled exceptions
+    file_log_path: str = f"{log_dir}/unhandled_exception/{datetime.now().date()}.log"
+    file_handler_unhandled = logging.FileHandler(file_log_path)
+    file_handler_unhandled.setLevel(logging.ERROR)
+
+    # Create a console handler for unhandled exceptions
+    console_handler_unhandled = logging.StreamHandler()
+    console_handler_unhandled.setLevel(logging.ERROR)
+
+    # Create a formatter for the unhandled exceptions
+    string_format: str = (
+        "%(asctime)s [%(name)s] %(levelname)s: %(message)s in %(filename)s:%(lineno)d"
+    )
+    formatter_unhandled = ExceptionTypeFormatter(string_format)
+    file_handler_unhandled.setFormatter(formatter_unhandled)
+    console_handler_unhandled.setFormatter(formatter_unhandled)
+
+    # Create a colored formatter for console handler
+    colored_formatter = ColoredFormatter(use_color=True)
+
+    # Set the formatter for console handler
+    console_handler_unhandled.setFormatter(colored_formatter)
+
+    # Add the file handler for unhandled exceptions to the logger
+    unhandled_exceptions_logger.addHandler(file_handler_unhandled)
+    unhandled_exceptions_logger.addHandler(console_handler_unhandled)
+
+    return unhandled_exceptions_logger
+
+
+def exception_handler(exc_type, exc_value, exc_traceback) -> None:
+    """Set the custom exception handler for unhandled exceptions"""
+    unhandled_exceptions_logger = configure_unhandled_exceptions_logger()
+
+    # Extract the exception type and its message
+    exception_name = exc_type.__name__ if exc_type else ""
+    exception_message = str(exc_value) if exc_value else ""
+
+    # Construct the message for the console handler
+    console_message = f"{exception_name}: {exception_message}"
+
+    # Log the constructed message with the console handler
+    unhandled_exceptions_logger.error(
+        console_message, exc_info=(exc_type, exc_value, exc_traceback)
+    )
+
+
+# Set the custom exception handler
+sys.excepthook = exception_handler

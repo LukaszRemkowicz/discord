@@ -14,7 +14,8 @@ COPY Pipfile Pipfile.lock ./
 RUN apk add --update --no-cache postgresql-client jpeg-dev
 RUN apk add --update --no-cache --virtual .tmp-build-deps \
     && apk add libpq-dev gcc \
-    && apk add libc-dev linux-headers postgresql-dev musl-dev zlib zlib-dev python3-dev
+    && apk add libc-dev linux-headers postgresql-dev musl-dev zlib zlib-dev python3-dev \
+    && pip install psycopg2
 
 RUN apk add firefox
 

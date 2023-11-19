@@ -2,3 +2,58 @@
 tortoise_orm = "settings.db_config"
 location = "./migrations"
 src_folder = "./."
+
+[[tool.poetry.source]]
+name = "pypi"
+priority = "primary"
+
+[tool.poetry]
+name = "DiscordBot"
+version = "0.0.2"
+description = ""
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+asyncpg = "0.27.0"
+beautifulsoup4 = "4.11.2"
+discord = "2.1.0"
+databases = "0.7.0"
+numpy = "*"
+geopy = "2.3.0"
+lxml = "4.9.2"
+pydantic = "*"
+pydantic_settings = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
+pillow = "9.4.0"
+requests =  "*"
+SQLAlchemy = "*"
+selenium = "4.8.2"
+tortoise-orm = "0.19.3"
+Unidecode = "1.3.6"
+sentry-sdk = "*"
+aerich = "*"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+requests-mock = "*"
+pytest-docker = "*"
+pytest = "*"
+pytest-mock = "*"
+pytest-asyncio = "*"
+
+[tool.poetry.scripts]
+makemigrations = "aerich migrate"
+migrate = "aerich upgrade"
+start = "python discord_bot.py"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.black]
+include = '\.py$'
+line-length = 89
