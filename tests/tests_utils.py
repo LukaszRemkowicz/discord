@@ -3,9 +3,11 @@ import os
 from PIL import Image
 
 from repos.repo_types import UmMeteoGram
+from settings import settings
 
 
 def create_images(tmp_dir):
+    """Create images for tests"""
     utils_dir = os.path.join(tmp_dir, "utils")
     os.makedirs(utils_dir)
     base_img = os.path.join(utils_dir, "base.png")
@@ -14,7 +16,7 @@ def create_images(tmp_dir):
     setattr(img, "url", base_img)
     setattr(img, "root_path", utils_dir)
 
-    my_image = os.path.join(tmp_dir, "my_image.png")
+    my_image = os.path.join(tmp_dir, settings.temp_file_name)
     second_img = Image.new("RGB", (100, 100), color="white")
     second_img.save(my_image)
     setattr(second_img, "url", my_image)

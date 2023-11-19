@@ -1,14 +1,12 @@
 import platform
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
-from settings import Settings
-
-settings: Settings = Settings()
+from settings import settings
 
 
 class URLConfig:

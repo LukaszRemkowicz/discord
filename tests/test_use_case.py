@@ -1,79 +1,73 @@
 import datetime
 import os
-import tempfile
-from typing import Optional, Union, List, Tuple
-from unittest.mock import patch, Mock
+from typing import List, Optional, Tuple, Union
+from unittest.mock import Mock
 
 import numpy
 import pytest
-from PIL import Image
 from numpy import array
+from PIL import Image
 from pytest_mock import MockerFixture
 
 from repos.models import Coords
 from repos.repo_types import Coords2Points, UmMeteoGram
+from settings import settings
 from tests.tests_utils import create_images
-import use_cases
 from use_cases.use_case import DiscordUseCase
-
-from settings import Settings
 from utils.utils import URLConfig
 
 
 def test_discord_use_case_search_index(
-    discord_use_case: DiscordUseCase, matrix: array
+    discord_use_case: DiscordUseCase, matrix: array, mocker: "MockerFixture"
 ) -> None:
     """Test searching_index_in_file method"""
 
-    with Settings() as settings:
-        settings.MATRIX_RESHAPE = matrix
+    mocker.patch(
+        "settings.settings.MATRIX_RESHAPE",
+        return_value=matrix,
+    )
 
-        res: Coords2Points = discord_use_case.searching_index_in_file(
-            54.15, 19.24, matrix
-        )
+    res: Coords2Points = discord_use_case.searching_index_in_file(54.15, 19.24, matrix)
 
-        assert isinstance(res, Coords2Points)
-        assert res.act_x == 409
-        assert res.act_y == 80
+    assert isinstance(res, Coords2Points)
+    assert res.act_x == 409
+    assert res.act_y == 80
 
-        res = discord_use_case.searching_index_in_file(5.95, 19.24, matrix)
+    res = discord_use_case.searching_index_in_file(5.95, 19.24, matrix)
 
-        assert isinstance(res, Coords2Points)
-        assert res.act_x == 52
-        assert res.act_y == 31
+    assert isinstance(res, Coords2Points)
+    assert res.act_x == 52
+    assert res.act_y == 31
 
 
 def test_merging_two_photos(
-    discord_use_case: DiscordUseCase, mocker: "MockerFixture"
+    discord_use_case: DiscordUseCase, mocker: "MockerFixture", tmp_path: str
 ) -> None:
     """Testing merging_two_photos method"""
-
     mocker.patch("os.path.exists", return_value=True)
     mocker.patch("urllib.request.urlretrieve", return_value="")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        images: UmMeteoGram = create_images(tmp_dir)
+    images: UmMeteoGram = create_images(tmp_path)
+    root_path: str = images.base_img.url.split("utils")[0]
 
-        root_path: str = images.base_img.url.split("utils")[0]
+    mocker.patch("settings.settings.MEDIA", root_path)
+    mocker.patch("settings.settings.ROOT_PATH", root_path)
 
-        discord_use_case.settings.set_setting("ROOT_PATH", root_path)
-        discord_use_case.settings.set_setting("MEDIA", root_path)
+    res: str = discord_use_case.merging_two_photos(" ")
 
-        res: str = discord_use_case.merging_two_photos(" ")
+    assert res
 
-        assert res
+    img: Image = Image.open(res)
+    expected_size = (
+        images.base_img.size[0] + images.extra_img.size[0],
+        images.base_img.size[1],
+    )
 
-        img: Image = Image.open(res)
-        expected_size = (
-            images.base_img.size[0] + images.extra_img.size[0],
-            images.base_img.size[1],
-        )
+    assert img.size == expected_size
 
-        assert img.size == expected_size
-
-        img.close()
-        images.base_img.close()
-        images.extra_img.close()
+    img.close()
+    images.base_img.close()
+    images.extra_img.close()
 
 
 @pytest.mark.asyncio
@@ -82,15 +76,14 @@ async def test_icm_database_search_no_bin_file(
 ) -> None:
     """Test icm_database_search method with no bin file, no Coords, no URL"""
 
-    with Settings() as settings:
-        settings.MATRIX_RESHAPE = None
-        mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
+    mocker.patch("settings.settings.ROOT_PATH", None)
+    mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
 
-        res: Optional[str] = await discord_use_case.icm_database_search(
-            city="City", coords=None
-        )
+    res: Optional[str] = await discord_use_case.icm_database_search(
+        city="City", coords=None
+    )
 
-        assert not res
+    assert not res
 
 
 @pytest.mark.asyncio
@@ -99,55 +92,52 @@ async def test_icm_database_search_no_url_no_cords(
 ) -> None:
     """Test main method for generating image url. No url, bin file served. No Coords"""
 
-    with Settings() as settings:
-        settings.MATRIX_RESHAPE = matrix
+    mocker.patch("settings.settings.MATRIX_RESHAPE", return_value=matrix)
+    mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
 
-        mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
+    res: Optional[str] = await discord_use_case.icm_database_search(
+        city="City", coords=None
+    )
 
-        res: Optional[str] = await discord_use_case.icm_database_search(
-            city="City", coords=None
-        )
-
-        assert not res
+    assert not res
 
 
 @pytest.mark.asyncio
 async def test_icm_database_search_url(
-    discord_use_case: DiscordUseCase, mocker: "MockerFixture", matrix: numpy.ndarray
+    discord_use_case: DiscordUseCase,
+    mocker: "MockerFixture",
+    matrix: numpy.ndarray,
+    tmp_path: str,
 ) -> None:
     """Test main method for generating image url. URL returned"""
 
-    with Settings() as settings:
-        settings.MATRIX_RESHAPE = matrix
+    mocker.patch("settings.settings.MATRIX_RESHAPE", return_value=matrix)
+    images: UmMeteoGram = create_images(tmp_path)
+    expected: str = URLConfig.MGRAM_URL.format(act_y="100", act_x="200", uuid="3")
+    mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=expected)
+    mocker.patch(
+        "use_cases.use_case.DiscordUseCase.merging_two_photos",
+        return_value=images.base_img.url,
+    )
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            images: UmMeteoGram = create_images(tmp_dir)
+    res: Optional[str] = await discord_use_case.icm_database_search(
+        city="City", coords=None
+    )
 
-        expected: str = URLConfig.MGRAM_URL.format(act_y="100", act_x="200", uuid="3")
-
-        mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=expected)
-        mocker.patch(
-            "use_cases.use_case.DiscordUseCase.merging_two_photos",
-            return_value=images.base_img.url,
-        )
-
-        res: Optional[str] = await discord_use_case.icm_database_search(
-            city="City", coords=None
-        )
-
-        assert res
-        assert res == images.base_img.url
+    assert res
+    assert res == images.base_img.url
 
 
 @pytest.mark.asyncio
 async def test_icm_database_search_no_url_but_bin_file(
-    discord_use_case: DiscordUseCase, mocker: "MockerFixture", matrix: numpy.ndarray
+    discord_use_case: DiscordUseCase,
+    mocker: "MockerFixture",
+    matrix: numpy.ndarray,
+    tmp_path: str,
 ) -> None:
     """Test main method for generating image url. URL not returned"""
-
-    discord_use_case.settings.set_setting("MATRIX_RESHAPE", matrix)
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        images: UmMeteoGram = create_images(tmp_dir)
+    mocker.patch("settings.settings.MATRIX_RESHAPE", matrix)
+    images: UmMeteoGram = create_images(tmp_path)
 
     mocker.patch("repos.api_repo.APIRepo.get_icm_result", return_value=None)
     mocker.patch(
@@ -187,9 +177,7 @@ async def test_get_moon_img(
             self.date = date
             self.image = ImageClassExample(url=image)
 
-    obj: MoonModelTest = MoonModelTest(
-        date=datetime.datetime.now(), image="example.jpg"
-    )
+    obj: MoonModelTest = MoonModelTest(date=datetime.datetime.now(), image="example.jpg")
     db_res: List[MoonModelTest] = [obj]
 
     mocker.patch("repos.db_repo.MoonRepo.filter", return_value=db_res)
@@ -248,7 +236,6 @@ async def test_get_sat_url(discord_use_case: DiscordUseCase, mocker: "MockerFixt
         "repos.api_repo.APIRepo.get_sunrise_time",
         return_value=expected_sunrise_sunset,
     )
-    settings: Settings = Settings()
     expected_result = os.path.join(settings.MEDIA, "infra_sat.gif")
     res: Union[str, dict] = await discord_use_case.get_sat_url()
 

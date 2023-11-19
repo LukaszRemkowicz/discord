@@ -1,22 +1,21 @@
-import datetime
+import sys
 from typing import Optional, Union
 
 import discord
-from unidecode import unidecode
-from discord.ext.commands import Context
 from discord.ext import commands
+from discord.ext.commands import Context
+from unidecode import unidecode
 
-from logger import get_module_logger, ColoredLogger
+from logger import ColoredLogger, exception_handler, get_module_logger
 from repos.api_repo import APIRepo
 from repos.db_repo import MoonRepo
 from repos.models import Coords
-from settings import Settings
+from settings import settings
 from use_cases.use_case import DiscordUseCase
 from utils.db_utils import DBConnectionHandler
 from utils.utils import Validator
 
-settings: Settings = Settings()
-
+sys.excepthook = exception_handler
 
 intents = discord.Intents.default()
 intents.members = True
@@ -24,7 +23,7 @@ intents.message_content = True
 
 client = discord.Client(intents=intents)
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix=settings.BOT_PREFIX, intents=intents)
 logger: ColoredLogger = get_module_logger("DISCORD")
 
 
@@ -120,48 +119,49 @@ async def return_sat(ctx):
     await ctx.send(file=discord.File(url))
 
 
+# TODO: check if needed
+# @bot.event
+# async def on_error(event, *args):
+#     date = datetime.datetime.now()
+#
+#     with open(
+#         settings.DISCORD_ON_ERROR_LOGS.format(
+#             date=date.strftime("%d.%m.%Y %H-%M-%S")),
+#             "w",
+#             encoding="utf-8"
+#     ) as file:
+#         breakpoint()
+#         if event == "on_message":
+#             file.write(f"Unhandled message: {args[0]}\n")
+#         else:
+#             raise
+
+
 @bot.event
-async def on_error(event, *args):
-    date = datetime.datetime.now()
+async def on_command_error(ctx, error) -> None:
+    """Error handler"""
 
-    with open(
-        settings.DISCORD_LOGS.format(date=date.strftime("%d-%m-%Y %H:%M:%S")), "w"
-    ) as f:
-        if event == "on_message":
-            f.write(f"Unhandled message: {args[0]}\n")
-        else:
-            raise
+    if isinstance(
+        error, commands.CommandNotFound
+    ):  # or discord.ext.commands.errors.CommandNotFound as you wrote
+        await ctx.send("Unknown command")
 
+    if "DBConnectionError" in str(error):
+        await ctx.send("Database connection error. Please try again later")
 
-@bot.event
-async def on_command_error(ctx, error):
-    logger.error(error)
+    original_error = getattr(error, "original", error)
+    original_traceback = original_error.__traceback__
+
+    # Log the original exception and traceback
+    exception_handler(type(original_error), original_error, original_traceback)
+
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send("You do not have the correct role for this command.")
+    else:
+        raise error
 
 
-# @tasks.loop(hours=random.choice([3, 4, 6, 8]))
-# async def called_once_a_some_hours():
-#     await bot.wait_until_ready()
-#     answers = [
-#         "Hey, you missed me?",
-#         "Its Friday soon   \\.^.^./",
-#         "whats uuuuuuuuuup?",
-#     ]
-#     message_channel_id = settings.CHANNELS.get("DEFAULT")
-#     message_channel = bot.get_channel(message_channel_id)
-#     whats_the_hour_now = datetime.datetime.now().time().strftime("%H")
-#     if 22 > int(whats_the_hour_now) > 7:
-#         response = random.choice(answers)
-#         await message_channel.send(response)
-#
-#
-# async def setup_hook():
-#     called_once_a_some_hours.start()
-#
-#
-# bot.setup_hook = setup_hook
-
+# TODO: will be needed for integration with FlightRadar
 # @tasks.loop(hours = 1)
 # async def remindstudy():
 #   await bot.wait_until_ready()
@@ -178,4 +178,4 @@ async def on_command_error(ctx, error):
 # # called_once_a_some_hours.start()
 #
 
-bot.run(settings.TOKEN)
+bot.run(settings.DISCORD_TOKEN)

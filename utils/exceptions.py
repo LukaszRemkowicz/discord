@@ -13,8 +13,10 @@ class DriverException(CustomBaseException):
 
 
 class TestDBWrongCredentialsError(CustomBaseException):
-    default_message = "Credentials for test DB are wrong. " \
-                      "Please be sure that you have valid variables in .env file in root directory"
+    default_message = (
+        "Credentials for test DB are wrong. "
+        "Please be sure that you have valid variables in .env file in root directory"
+    )
 
 
 class DBConnectionError(ConnectionError, CannotConnectNowError):
@@ -26,4 +28,6 @@ class NoImageFoundException(Exception):
 
 
 class UploadToNotGivenException(Exception):
-    default_message = "Parameter upload_to not given. Be sure you used it in FileField field"
+    default_message = (
+        "Parameter upload_to not given. Be sure you used it in FileField field"
+    )

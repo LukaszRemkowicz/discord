@@ -1,0 +1,30 @@
+FROM python:3.10.13-slim-bookworm as development
+
+EXPOSE 8000
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y \
+    dpkg-dev \
+    gcc \
+    git \
+    curl \
+    gnupg \
+    firefox-esr
+
+RUN pip install poetry
+
+ENV PATH=$HOME/.poetry/bin:$PATH
+
+WORKDIR /discord
+COPY . /discord
+
+RUN poetry install --without dev
+
+FROM development as prod
+RUN adduser -u 5678 --disabled-password --gecos "" user && chown -R user /discord
+USER user

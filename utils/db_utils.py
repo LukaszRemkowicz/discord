@@ -1,15 +1,11 @@
-import asyncio
-from asyncio import AbstractEventLoop
-from datetime import datetime
-from time import sleep
-
 from asyncpg import CannotConnectNowError
 from tortoise import Tortoise
 
-from settings import Settings
+from logger import ColoredLogger, get_module_logger
+from settings import settings
 from utils.exceptions import DBConnectionError
 
-settings: Settings = Settings()
+logger: ColoredLogger = get_module_logger("DB_UTILS")
 
 
 class DBConnectionHandler:
@@ -17,12 +13,18 @@ class DBConnectionHandler:
 
     async def __aenter__(self) -> None:
         """Open database connection"""
-        await Tortoise.init(config=settings.db_config)
-        while True:
-            retry: int = 0
+        await Tortoise.init(config=settings.db_config())
+        retry: int = 0
+        continue_loop: bool = True
+
+        while continue_loop:
             try:
+                logger.info(f"Trying to connect to database. Retrying: {retry} time")
                 if retry >= 5:
+                    logger.critical("Cannot connect to database")
+                    continue_loop = False
                     raise DBConnectionError()
+                logger.info(f"Connected to db {settings.db.NAME}")
                 await Tortoise.generate_schemas()
                 break
             except (ConnectionError, CannotConnectNowError):
@@ -32,42 +34,3 @@ class DBConnectionHandler:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Close database connection"""
         await Tortoise.close_connections()
-
-
-#
-# async def start_db():
-#     await Tortoise.init(config=DB_CONFIG)
-#     await Tortoise.generate_schemas()
-#
-#
-# async def add_moon():
-#     await Tortoise.init(config=DB_CONFIG)
-#     await Tortoise.generate_schemas()
-#     await MoonModel.create(date=datetime.now(), image=b'binary_data_here', name='dwdwdw Moon')
-#
-#
-# async def close_db():
-#     await Tortoise.close_connections()
-#
-#
-# def aj():
-#     async def main():
-#
-#         await start_db()
-#         await add_moon()
-#         await close_db()
-#     loop: AbstractEventLoop = asyncio.get_event_loop()
-#     loop.run_until_complete(main())
-#
-# # aj()
-#
-# async def run():
-#     await Tortoise.init(config=DB_CONFIG)
-#     await Tortoise.generate_schemas()
-#     a: MoonModel = await MoonModel.create(date=datetime.now(), image='base.png', name='NOWEEEEE Moon')
-#     breakpoint()
-#     b = await MoonModel.get(id=2)
-#     breakpoint()
-#     await Tortoise.close_connections()
-
-# asyncio.run(run())

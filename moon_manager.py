@@ -2,20 +2,18 @@ import asyncio
 import os
 import time
 from datetime import datetime
-from typing import Tuple, Optional, Union
+from typing import Optional, Tuple, Union
 
 from PIL import Image
 from selenium.common import WebDriverException
 from selenium.webdriver.chrome.webdriver import WebDriver
 
 from logger import ColoredLogger, get_module_logger
-from repos.repo_types import CropParams
-from settings import Settings
-from utils.utils import start_driver, daterange  # type: ignore
 from repos.models import MoonModel
+from repos.repo_types import CropParams
+from settings import settings
 from utils.db_utils import DBConnectionHandler
-
-settings: Settings = Settings()
+from utils.utils import daterange, start_driver
 
 logger: ColoredLogger = get_module_logger("MOON")
 
@@ -101,9 +99,7 @@ class MoonManager:
                 crop_file_path: str = await self.crop_file(
                     file=file, year=day.year, month=day.month, day=day.day
                 )
-                await self.db.create(
-                    date=day.strftime("%Y-%m-%d"), image=crop_file_path
-                )
+                await self.db.create(date=day.strftime("%Y-%m-%d"), image=crop_file_path)
                 logger.info("Saved pic to DB")
                 os.remove(file_path)
 
@@ -126,7 +122,8 @@ def run_moon_script():
         async with MoonManager(driver=start_driver(), day=True) as moon:
             await moon.prepare_moon_photos()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.run_until_complete(main())
 
 
