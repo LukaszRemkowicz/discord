@@ -6,7 +6,7 @@ from typing import List, Protocol
 import numpy
 import sentry_sdk
 from dotenv import find_dotenv
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from repos.repo_types import CropParams
@@ -108,17 +108,22 @@ class Settings(BaseSettings):
         extra="allow",
     )
 
-    MATRIX_PATH: str = ""
+    MATRIX_PATH: str | None = None
     MATRIX_RESHAPE: numpy.ndarray | None = None
-
-    if os.path.isfile(MATRIX_PATH):
-        MATRIX_RESHAPE: numpy.ndarray = numpy.reshape(
-            numpy.fromfile(MATRIX_PATH), (616, 448, 2)
-        )
 
     def db_config(self) -> dict:
         return TortoiseConfig.config(self.db.credentials())
 
+    @model_validator(mode="before")  # noqa
+    @classmethod
+    def validate_data(cls, data: dict) -> dict:
+        absolute_path = Path(os.getcwd()) / Path(data["MATRIX_PATH"])
+        if os.path.isfile(absolute_path):
+            data["MATRIX_RESHAPE"] = numpy.reshape(
+                numpy.fromfile(data["MATRIX_PATH"]), (616, 448, 2)
+            )
+
+        return data
 
 settings = Settings()
 
