@@ -30,7 +30,7 @@ jobs:
           poetry install
 
       - name: tests
-        run:  pipenv run pytest
+        run:  poetry run pytest
 #
 #      - name: install docker-compose
 #        run: |
